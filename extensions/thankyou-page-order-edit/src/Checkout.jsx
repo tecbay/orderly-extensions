@@ -8,12 +8,15 @@ import {
     useApplyAttributeChange,
     useInstructions,
     useTranslate,
+    useSessionToken
 } from "@shopify/ui-extensions-react/checkout";
+import {useEffect, useState} from "react";
 
 // 1. Choose an extension target
 export default reactExtension("purchase.checkout.block.render", () => (<Extension/>));
 
 function Extension() {
+    const {getSessionToken} = useSessionToken();
     const translate = useTranslate();
     const {extension} = useApi();
     const instructions = useInstructions();
@@ -31,7 +34,36 @@ function Extension() {
         );
     }
 
-    // 3. Render a UI
+    async function onCheckboxChange(isChecked) {
+        // 4. Call the API to modify checkout
+        const result = await applyAttributeChange({
+            key: "requestedFreeGift",
+            type: "updateAttribute",
+            value: isChecked ? "yes" : "no",
+        });
+        console.log("applyAttributeChange result", result);
+    }
+
+    const [data, setData] = useState(null);
+
+    useEffect(() => {
+        (async () => {
+
+            const token = await getSessionToken();
+            console.log(token);
+            const res = await fetch("https://orderly-be.test/api/asd8f79?token=" + token, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            })
+
+            console.log(await res.json())
+        })()
+
+    }, []);
+
+
     return (
         <BlockStack border={"dotted"} padding={"tight"}>
             <Banner title="thankyou-page-order-edit">
@@ -44,14 +76,4 @@ function Extension() {
             </Checkbox>
         </BlockStack>
     );
-
-    async function onCheckboxChange(isChecked) {
-        // 4. Call the API to modify checkout
-        const result = await applyAttributeChange({
-            key: "requestedFreeGift",
-            type: "updateAttribute",
-            value: isChecked ? "yes" : "no",
-        });
-        console.log("applyAttributeChange result", result);
-    }
 }
