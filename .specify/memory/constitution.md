@@ -1,9 +1,10 @@
 <!--
 Sync Impact Report:
-- Version change: new → 1.0.0
-- Added sections: Shopify Extension Development Standards, Quality Gates
-- Templates requiring updates: ⚠ pending validation
-- Initial constitution creation for Shopify extension-only app
+- Version change: 1.0.0 → 1.1.0
+- Modified principles: Added Documentation-First Development principle
+- Added sections: VI. Documentation-First Development
+- Templates requiring updates: ✅ plan-template.md (version reference updated)
+- Amendment: Added mandatory Shopify documentation consultation requirement
 -->
 
 # Orderly Constitution
@@ -35,6 +36,11 @@ Extensions MUST degrade gracefully when capabilities are unavailable; MUST handl
 
 **Rationale**: Ensures reliable checkout experience across different merchant configurations and network conditions.
 
+### VI. Documentation-First Development
+All developers MUST consult Shopify documentation before implementation or writing code; Official Shopify docs MUST be referenced for API usage, component specifications, and best practices; Implementation decisions MUST align with current Shopify guidelines and recommendations; MUST verify code examples and patterns against official documentation sources.
+
+**Rationale**: Prevents implementation errors, ensures adherence to platform standards, reduces debugging time, and maintains compatibility with Shopify's evolving ecosystem.
+
 ## Shopify Extension Development Standards
 
 ### Configuration Management
@@ -63,4 +69,4 @@ Constitution supersedes all development practices and decisions; All extension d
 
 **Amendment Process**: Requires documentation of changes, team approval, and migration plan for existing extensions.
 
-**Version**: 1.0.0 | **Ratified**: 2025-09-28 | **Last Amended**: 2025-09-28
+**Version**: 1.1.0 | **Ratified**: 2025-09-28 | **Last Amended**: 2025-09-28
