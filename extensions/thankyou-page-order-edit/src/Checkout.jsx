@@ -1,79 +1,90 @@
 import {
     reactExtension,
-    Banner,
     BlockStack,
-    Checkbox,
+    Button,
+    Modal,
     Text,
-    useApi,
-    useApplyAttributeChange,
-    useInstructions,
-    useTranslate,
     useSessionToken
 } from "@shopify/ui-extensions-react/checkout";
-import {useEffect, useState} from "react";
+import {useState} from "react";
 
 // 1. Choose an extension target
 export default reactExtension("purchase.checkout.block.render", () => (<Extension/>));
 
 function Extension() {
-    const {getSessionToken} = useSessionToken();
-    const translate = useTranslate();
-    const {extension} = useApi();
-    const instructions = useInstructions();
-    const applyAttributeChange = useApplyAttributeChange();
+    const sessionToken = useSessionToken();
+    const [showCancelModal, setShowCancelModal] = useState(false);
 
+    const handleCancelOrder = async () => {
+        try {
+            const token = await sessionToken.get();
+            if (!token) {
+                console.error("Failed to get session token");
+                return;
+            }
 
-    // 2. Check instructions for feature availability, see https://shopify.dev/docs/api/checkout-ui-extensions/apis/cart-instructions for details
-    if (!instructions.attributes.canUpdateAttributes) {
-        // For checkouts such as draft order invoices, cart attributes may not be allowed
-        // Consider rendering a fallback UI or nothing at all, if the feature is unavailable
-        return (
-            <Banner title="thankyou-page-order-edit" status="warning">
-                {translate("attributeChangesAreNotSupported")}
-            </Banner>
-        );
-    }
+            // Replace with actual order ID
+            const orderId = "newly_created_shopify_order_id";
+            const apiUrl = `https://orderly-be.test/api/orders/${orderId}`;
 
-    async function onCheckboxChange(isChecked) {
-        // 4. Call the API to modify checkout
-        const result = await applyAttributeChange({
-            key: "requestedFreeGift",
-            type: "updateAttribute",
-            value: isChecked ? "yes" : "no",
-        });
-        console.log("applyAttributeChange result", result);
-    }
+            console.log("🗑️ Cancelling order:", orderId);
 
-    const [data, setData] = useState(null);
-
-    useEffect(() => {
-        (async () => {
-
-            const token = await getSessionToken();
-            console.log(token);
-            const res = await fetch("https://orderly-be.test/api/asd8f79?token=" + token, {
+            const response = await fetch(apiUrl, {
+                method: 'DELETE',
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
                 }
-            })
+            });
 
-            console.log(await res.json())
-        })()
+            if (response.ok) {
+                console.log("✅ Order cancelled successfully");
+            } else {
+                console.error("❌ Failed to cancel order:", response.status, response.statusText);
+            }
+        } catch (error) {
+            console.error("❌ Error cancelling order:", error);
+        } finally {
+            setShowCancelModal(false);
+        }
+    };
 
-    }, []);
-
+    const handleEditOrder = () => {
+        console.log("✏️ Edit order button clicked");
+    };
 
     return (
-        <BlockStack border={"dotted"} padding={"tight"}>
-            <Banner title="thankyou-page-order-edit">
-                {translate("welcome", {
-                    target: <Text emphasis="italic">{extension.target}</Text>,
-                })}
-            </Banner>
-            <Checkbox onChange={onCheckboxChange}>
-                {translate("iWouldLikeAFreeGiftWithMyOrder")}
-            </Checkbox>
+        <BlockStack spacing="base">
+            <Button
+                kind="secondary"
+                onPress={() => setShowCancelModal(true)}
+            >
+                Cancel Order
+            </Button>
+
+            <Button
+                kind="primary"
+                onPress={handleEditOrder}
+            >
+                Edit Order
+            </Button>
+
+            {showCancelModal && (
+                <Modal
+                    title="Cancel Order"
+                    onClose={() => setShowCancelModal(false)}
+                    primaryAction={{
+                        content: "Yes, Cancel Order",
+                        onAction: handleCancelOrder
+                    }}
+                    secondaryAction={{
+                        content: "Keep Order",
+                        onAction: () => setShowCancelModal(false)
+                    }}
+                >
+                    <Text>Are you sure you want to cancel this order? This action cannot be undone.</Text>
+                </Modal>
+            )}
         </BlockStack>
     );
 }
