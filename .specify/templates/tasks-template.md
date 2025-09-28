@@ -47,81 +47,81 @@
 - [ ] T002 Initialize [language] project with [framework] dependencies
 - [ ] T003 [P] Configure linting and formatting tools
 
-## Phase 3.2: Tests First (TDD) ⚠️ MUST COMPLETE BEFORE 3.3
-**CRITICAL: These tests MUST be written and MUST FAIL before ANY implementation**
-- [ ] T004 [P] Contract test POST /api/users in tests/contract/test_users_post.py
-- [ ] T005 [P] Contract test GET /api/users/{id} in tests/contract/test_users_get.py
-- [ ] T006 [P] Integration test user registration in tests/integration/test_registration.py
-- [ ] T007 [P] Integration test auth flow in tests/integration/test_auth.py
+## Phase 3.2: Extension Validation and Configuration
+**Focus: Shopify extension configuration and validation**
+- [ ] T004 [P] Validate extension configuration in shopify.extension.toml
+- [ ] T005 [P] Configure extension targets and capabilities
+- [ ] T006 [P] Set up Shopify UI component validation
+- [ ] T007 [P] Configure extension settings and merchant options
 
-## Phase 3.3: Core Implementation (ONLY after tests are failing)
-- [ ] T008 [P] User model in src/models/user.py
-- [ ] T009 [P] UserService CRUD in src/services/user_service.py
-- [ ] T010 [P] CLI --create-user in src/cli/user_commands.py
-- [ ] T011 POST /api/users endpoint
-- [ ] T012 GET /api/users/{id} endpoint
-- [ ] T013 Input validation
-- [ ] T014 Error handling and logging
+## Phase 3.3: Extension Implementation
+- [ ] T008 [P] React extension component in src/[ExtensionName].jsx
+- [ ] T009 [P] Shopify UI components integration
+- [ ] T010 [P] Extension API hooks and session token handling
+- [ ] T011 Extension state management and React hooks
+- [ ] T012 Network request handling with proper error boundaries
+- [ ] T013 Extension settings and merchant configuration
+- [ ] T014 Error handling and user feedback components
 
-## Phase 3.4: Integration
-- [ ] T015 Connect UserService to DB
-- [ ] T016 Auth middleware
-- [ ] T017 Request/response logging
-- [ ] T018 CORS and security headers
+## Phase 3.4: Extension Integration and Testing
+- [ ] T015 Test extension in Shopify development store
+- [ ] T016 Validate extension targets and placement
+- [ ] T017 Test extension with different merchant configurations
+- [ ] T018 Verify extension performance and bundle size
 
-## Phase 3.5: Polish
-- [ ] T019 [P] Unit tests for validation in tests/unit/test_validation.py
-- [ ] T020 Performance tests (<200ms)
-- [ ] T021 [P] Update docs/api.md
-- [ ] T022 Remove duplication
-- [ ] T023 Run manual-testing.md
+## Phase 3.5: Extension Polish and Deployment
+- [ ] T019 [P] Add accessibility testing and ARIA labels
+- [ ] T020 Optimize extension bundle size and loading performance
+- [ ] T021 [P] Update extension documentation and merchant guides
+- [ ] T022 Review and refactor extension code for maintainability
+- [ ] T023 Prepare extension for production deployment
 
 ## Dependencies
-- Tests (T004-T007) before implementation (T008-T014)
+- Extension configuration (T004-T007) before implementation (T008-T014)
 - T008 blocks T009, T015
-- T016 blocks T018
+- T016 blocks T017
 - Implementation before polish (T019-T023)
 
 ## Parallel Example
 ```
 # Launch T004-T007 together:
-Task: "Contract test POST /api/users in tests/contract/test_users_post.py"
-Task: "Contract test GET /api/users/{id} in tests/contract/test_users_get.py"
-Task: "Integration test registration in tests/integration/test_registration.py"
-Task: "Integration test auth in tests/integration/test_auth.py"
+Task: "Validate extension configuration in shopify.extension.toml"
+Task: "Configure extension targets and capabilities"
+Task: "Set up Shopify UI component validation"
+Task: "Configure extension settings and merchant options"
 ```
 
 ## Notes
 - [P] tasks = different files, no dependencies
-- Verify tests fail before implementing
+- Validate extension configuration before implementing functionality
 - Commit after each task
 - Avoid: vague tasks, same file conflicts
 
 ## Task Generation Rules
 *Applied during main() execution*
 
-1. **From Contracts**:
-   - Each contract file → contract test task [P]
-   - Each endpoint → implementation task
-   
-2. **From Data Model**:
-   - Each entity → model creation task [P]
-   - Relationships → service layer tasks
-   
+1. **From Extension Configuration**:
+   - Each extension target → configuration task [P]
+   - Each capability → setup task
+
+2. **From UI Requirements**:
+   - Each component → React component task [P]
+   - UI interactions → hook implementation tasks
+
 3. **From User Stories**:
-   - Each story → integration test [P]
-   - Quickstart scenarios → validation tasks
+   - Each story → extension functionality [P]
+   - Merchant scenarios → configuration validation tasks
 
 4. **Ordering**:
-   - Setup → Tests → Models → Services → Endpoints → Polish
+   - Setup → Configuration → Components → Integration → Polish
    - Dependencies block parallel execution
 
 ## Validation Checklist
 *GATE: Checked by main() before returning*
 
-- [ ] All contracts have corresponding tests
-- [ ] All entities have model tasks
-- [ ] All tests come before implementation
+- [ ] All extension targets have configuration tasks
+- [ ] All UI components have implementation tasks
+- [ ] All extension configuration comes before implementation
 - [ ] Parallel tasks truly independent
 - [ ] Each task specifies exact file path
 - [ ] No task modifies same file as another [P] task
