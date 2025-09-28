@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ExternalDependencies">
+    <plugin id="JSIntentionPowerPack" />
+    <plugin id="JavaScript" />
+    <plugin id="NodeJS" />
+    <plugin id="org.jetbrains.plugins.vue" />
+    <plugin id="org.jetbrains.plugins.yaml" />
+    <plugin id="ru.adelf.idea.dotenv" />
+  </component>
+</project>
