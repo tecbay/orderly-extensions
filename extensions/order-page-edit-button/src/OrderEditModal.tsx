@@ -10,10 +10,10 @@ import { useState } from "react";
 
 export default reactExtension(
     "customer-account.order.action.render",
-    () => <MenuActionModalExtension />
+    () => <OrderEditModal />
 );
 
-function MenuActionModalExtension() {
+function OrderEditModal() {
     const { close } = useApi<"customer-account.order.action.render">();
     const [currentProblem, setCurrentProblem] = useState("1");
     const [isLoading, setIsLoading] = useState(false);

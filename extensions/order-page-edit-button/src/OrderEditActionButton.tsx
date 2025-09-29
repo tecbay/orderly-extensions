@@ -3,17 +3,17 @@ import {useEffect} from "react";
 
 export default reactExtension(
     "customer-account.order.action.menu-item.render", (api) => {
-        console.log('MenuActionItemExtension API:', api);
+        console.log('OrderEditActionButton API:', api);
 
-        return <MenuActionItemExtension orderId={api.orderId} />;
+        return <OrderEditActionButton orderId={api.orderId} />;
     }
 );
 
-function MenuActionItemExtension({ orderId }: { orderId: string }) {
+function OrderEditActionButton({ orderId }: { orderId: string }) {
     const { navigation } = useApi<"customer-account.order.action.menu-item.render">();
 
     useEffect(() => {
-        console.log('MenuActionItemExtension orderId:', orderId);
+        console.log('OrderEditActionButton orderId:', orderId);
     }, [orderId]);
 
     // For modal to work, the button should NOT have onPress - Shopify automatically opens the modal

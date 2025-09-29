@@ -6,8 +6,8 @@
 api_version = "2025-07"
 
 [[extensions]]
-name = "single-order"
-handle = "single-order"
+name = "Order edit button"
+handle = "order-edit-button"
 type = "ui_extension"
 uid = "9e012236-56a0-6118-c5dc-c85333a63bbed44a7ac5"
 
@@ -16,12 +16,12 @@ uid = "9e012236-56a0-6118-c5dc-c85333a63bbed44a7ac5"
 # https://shopify.dev/docs/api/customer-account-ui-extensions/unstable/extension-targets-overview
 
 [[extensions.targeting]]
-module = "./src/MenuActionExtension.tsx"
+module = "./src/OrderEditActionButton.tsx"
 target = "customer-account.order.action.menu-item.render"
 
 
 [[extensions.targeting]]
-module = "./src/MenuActionModalExtension.tsx"
+module = "./src/OrderEditModal.tsx"
 target = "customer-account.order.action.render"
 
 [extensions.capabilities]
