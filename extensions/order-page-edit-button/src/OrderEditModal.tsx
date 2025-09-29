@@ -14,35 +14,49 @@ import {
 } from "@shopify/ui-extensions-react/customer-account";
 import {useState, useEffect} from "react";
 
-// TypeScript interfaces for our data
+// TypeScript interfaces for Customer Account API
 interface LineItem {
     id: string;
+    name: string;
     title: string;
     quantity: number;
-    variant?: {
-        id: string;
-        title: string;
-        image?: {
-            url: string;
-        };
-    };
-    currentTotalPrice: {
+    variantId?: string;
+    variantTitle?: string;
+    price?: {
         amount: string;
         currencyCode: string;
+    };
+    totalPrice?: {
+        amount: string;
+        currencyCode: string;
+    };
+    image?: {
+        url: string;
+        altText?: string;
     };
 }
 
 interface OrderData {
     id: string;
     name: string;
+    createdAt: string;
+    financialStatus?: string;
+    fulfillmentStatus: string;
+    edited: boolean;
     lineItems: {
         nodes: LineItem[];
     };
-    totalPriceSet: {
-        presentmentMoney: {
-            amount: string;
-            currencyCode: string;
-        };
+    totalPrice: {
+        amount: string;
+        currencyCode: string;
+    };
+    subtotal?: {
+        amount: string;
+        currencyCode: string;
+    };
+    totalTax?: {
+        amount: string;
+        currencyCode: string;
     };
 }
 
@@ -59,20 +73,56 @@ function OrderEditModal({orderId}: { orderId: string }) {
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    // GraphQL query to fetch complete order details
+    // GraphQL query for Customer Account API
     const orderQuery = {
         query: `
-        query {
-          order(id: "${orderId}") {
+        query GetOrder($orderId: ID!) {
+          order(id: $orderId) {
+            id
             name
-            createdAt,
-            cancelReason,
-            confirmationNumber,
-            edited,
-            fulfillmentStatus
+            createdAt
+            financialStatus
+            edited
+            totalPrice {
+              amount
+              currencyCode
+            }
+            subtotal {
+              amount
+              currencyCode
+            }
+            totalTax {
+              amount
+              currencyCode
+            }
+            lineItems(first: 50) {
+              nodes {
+                id
+                name
+                title
+                quantity
+                variantId
+                variantTitle
+                price {
+                  amount
+                  currencyCode
+                }
+                totalPrice {
+                  amount
+                  currencyCode
+                }
+                image {
+                  url
+                  altText
+                }
+              }
+            }
           }
         }
       `,
+        variables: {
+            orderId: orderId
+        }
     };
 
     // @ts-ignore
@@ -94,7 +144,25 @@ function OrderEditModal({orderId}: { orderId: string }) {
 
             const response = await result.json();
 
-            console.log(response);
+            if (response.errors) {
+                console.error('GraphQL errors:', response.errors);
+                setError('Failed to load order data. Please ensure protected customer data access is enabled.');
+                return;
+            }
+
+            if (response.data?.order) {
+                const order = response.data.order;
+                setOrderData(order);
+
+                // Initialize quantities with current order quantities
+                const initialQuantities: Record<string, number> = {};
+                order.lineItems.nodes.forEach((item: LineItem) => {
+                    initialQuantities[item.id] = item.quantity;
+                });
+                setQuantities(initialQuantities);
+            } else {
+                setError('Order not found');
+            }
         } catch (err) {
             console.error('Error fetching order:', err);
             setError('Failed to load order data. Please ensure protected customer data access is enabled.');
@@ -193,18 +261,30 @@ function OrderEditModal({orderId}: { orderId: string }) {
             <Form onSubmit={onSubmit}>
                 <BlockStack spacing="base">
                     <TextBlock size="large">
-                        Order Total: {orderData.totalPriceSet.presentmentMoney.amount} {orderData.totalPriceSet.presentmentMoney.currencyCode}
+                        Order Total: {orderData.totalPrice.amount} {orderData.totalPrice.currencyCode}
                     </TextBlock>
+
+                    {orderData.subtotal && (
+                        <TextBlock size="small">
+                            Subtotal: {orderData.subtotal.amount} {orderData.subtotal.currencyCode}
+                        </TextBlock>
+                    )}
+
+                    {orderData.totalTax && (
+                        <TextBlock size="small">
+                            Tax: {orderData.totalTax.amount} {orderData.totalTax.currencyCode}
+                        </TextBlock>
+                    )}
 
                     <TextBlock emphasis="bold">Order Items:</TextBlock>
 
                     {orderData.lineItems.nodes.map((item) => (
                         <BlockStack key={item.id} spacing="tight" border="base" padding="base">
                             <InlineStack spacing="base" blockAlignment="center">
-                                {item.variant?.image?.url && (
+                                {item.image?.url && (
                                     <Image
-                                        source={item.variant.image.url}
-                                        alt={item.title}
+                                        source={item.image.url}
+                                        alt={item.image.altText || item.name}
                                         aspectRatio={1}
                                         fit="cover"
                                         width={60}
@@ -212,20 +292,27 @@ function OrderEditModal({orderId}: { orderId: string }) {
                                 )}
 
                                 <BlockStack spacing="tight" flex={1}>
-                                    <TextBlock emphasis="bold">{item.title}</TextBlock>
-                                    {item.variant?.title && (
-                                        <TextBlock size="small">{item.variant.title}</TextBlock>
+                                    <TextBlock emphasis="bold">{item.name}</TextBlock>
+                                    {item.variantTitle && (
+                                        <TextBlock size="small">{item.variantTitle}</TextBlock>
                                     )}
-                                    <TextBlock size="small">
-                                        Price: {item.currentTotalPrice.amount} {item.currentTotalPrice.currencyCode}
-                                    </TextBlock>
+                                    {item.totalPrice && (
+                                        <TextBlock size="small">
+                                            Total: {item.totalPrice.amount} {item.totalPrice.currencyCode}
+                                        </TextBlock>
+                                    )}
+                                    {item.price && (
+                                        <TextBlock size="small">
+                                            Unit Price: {item.price.amount} {item.price.currencyCode}
+                                        </TextBlock>
+                                    )}
                                 </BlockStack>
 
                                 <BlockStack spacing="tight">
                                     <TextBlock size="small">Quantity:</TextBlock>
                                     <TextField
                                         label="Quantity"
-                                        value={quantities[item.id]?.toString() || '0'}
+                                        value={quantities[item.id]?.toString() || item.quantity.toString()}
                                         onChange={(value) => handleQuantityChange(item.id, value)}
                                         type="number"
                                         min={0}
