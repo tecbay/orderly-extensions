@@ -28,10 +28,10 @@ function MenuActionModalExtension() {
 
     return (
         <CustomerAccountAction
-            title="Report a problem"
+            title="Edit Order"
             primaryAction={
                 <Button loading={isLoading} onPress={onSubmit}>
-                    Report
+                    Save Changes
                 </Button>
             }
             secondaryAction={
@@ -42,13 +42,13 @@ function MenuActionModalExtension() {
         >
             <Form onSubmit={onSubmit}>
                 <Select
-                    label="Select a problem"
+                    label="Edit action"
                     options={[
-                        { value: "1", label: "Package item is damaged" },
-                        { value: "2", label: "Missing items" },
-                        { value: "3", label: "Wrong item was sent" },
-                        { value: "4", label: "Item arrived too late" },
-                        { value: "5", label: "Never received item" }
+                        { value: "1", label: "Update shipping address" },
+                        { value: "2", label: "Change delivery instructions" },
+                        { value: "3", label: "Request order modification" },
+                        { value: "4", label: "Add special notes" },
+                        { value: "5", label: "Contact support" }
                     ]}
                     value={currentProblem}
                     onChange={setCurrentProblem}
