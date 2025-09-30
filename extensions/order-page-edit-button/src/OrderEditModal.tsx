@@ -5,60 +5,15 @@ import {
     useApi,
     Form,
     BlockStack,
-    TextField,
-    InlineStack,
     TextBlock,
-    Image,
     Banner,
     Spinner
 } from "@shopify/ui-extensions-react/customer-account";
-import {useState, useEffect} from "react";
-
-// TypeScript interfaces for Customer Account API
-interface LineItem {
-    id: string;
-    name: string;
-    title: string;
-    quantity: number;
-    variantId?: string;
-    variantTitle?: string;
-    price?: {
-        amount: string;
-        currencyCode: string;
-    };
-    totalPrice?: {
-        amount: string;
-        currencyCode: string;
-    };
-    image?: {
-        url: string;
-        altText?: string;
-    };
-}
-
-interface OrderData {
-    id: string;
-    name: string;
-    createdAt: string;
-    financialStatus?: string;
-    fulfillmentStatus: string;
-    edited: boolean;
-    lineItems: {
-        nodes: LineItem[];
-    };
-    totalPrice: {
-        amount: string;
-        currencyCode: string;
-    };
-    subtotal?: {
-        amount: string;
-        currencyCode: string;
-    };
-    totalTax?: {
-        amount: string;
-        currencyCode: string;
-    };
-}
+import { useState } from "react";
+import { OrderData, Product } from "./types";
+import { useOrderData } from "./hooks/useOrderData";
+import { OrderItemsList } from "./components/OrderItemsList";
+import { ProductSearchModal } from "./components/ProductSearchModal";
 
 export default reactExtension(
     "customer-account.order.action.render",
@@ -66,116 +21,17 @@ export default reactExtension(
 );
 
 function OrderEditModal({orderId}: { orderId: string }) {
-    const {close, query} = useApi<"customer-account.order.action.render">();
-    const [orderData, setOrderData] = useState<OrderData | null>(null);
-    const [quantities, setQuantities] = useState<Record<string, number>>({});
-    const [isLoading, setIsLoading] = useState(true);
+    const {close} = useApi<"customer-account.order.action.render">();
+    const {
+        orderData,
+        quantities,
+        setQuantities,
+        isLoading,
+        error
+    } = useOrderData(orderId);
+
     const [isSaving, setIsSaving] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-    // GraphQL query for Customer Account API
-    const orderQuery = {
-        query: `
-        query GetOrder($orderId: ID!) {
-          order(id: $orderId) {
-            id
-            name
-            createdAt
-            financialStatus
-            edited
-            totalPrice {
-              amount
-              currencyCode
-            }
-            subtotal {
-              amount
-              currencyCode
-            }
-            totalTax {
-              amount
-              currencyCode
-            }
-            lineItems(first: 50) {
-              nodes {
-                id
-                name
-                title
-                quantity
-                variantId
-                variantTitle
-                price {
-                  amount
-                  currencyCode
-                }
-                totalPrice {
-                  amount
-                  currencyCode
-                }
-                image {
-                  url
-                  altText
-                }
-              }
-            }
-          }
-        }
-      `,
-        variables: {
-            orderId: orderId
-        }
-    };
-
-    // @ts-ignore
-    async function fetchOrderData() {
-        try {
-            setIsLoading(true);
-            setError(null);
-
-            const result = await fetch(
-                "shopify://customer-account/api/2024-10/graphql.json",
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify(orderQuery),
-                }
-            );
-
-            const response = await result.json();
-
-            if (response.errors) {
-                console.error('GraphQL errors:', response.errors);
-                setError('Failed to load order data. Please ensure protected customer data access is enabled.');
-                return;
-            }
-
-            if (response.data?.order) {
-                const order = response.data.order;
-                setOrderData(order);
-
-                // Initialize quantities with current order quantities
-                const initialQuantities: Record<string, number> = {};
-                order.lineItems.nodes.forEach((item: LineItem) => {
-                    initialQuantities[item.id] = item.quantity;
-                });
-                setQuantities(initialQuantities);
-            } else {
-                setError('Order not found');
-            }
-        } catch (err) {
-            console.error('Error fetching order:', err);
-            setError('Failed to load order data. Please ensure protected customer data access is enabled.');
-        } finally {
-            setIsLoading(false);
-        }
-    }
-
-    // Fetch order data when component mounts
-    useEffect(() => {
-        if (orderId) {
-            fetchOrderData();
-        }
-    }, [orderId, query]);
+    const [showProductSearch, setShowProductSearch] = useState(false);
 
     // Handle quantity changes
     const handleQuantityChange = (lineItemId: string, newQuantity: string) => {
@@ -184,6 +40,13 @@ function OrderEditModal({orderId}: { orderId: string }) {
             ...prev,
             [lineItemId]: Math.max(0, quantity) // Ensure non-negative
         }));
+    };
+
+    // Handle product selection from search
+    const handleProductSelect = (product: Product) => {
+        console.log('Product selected:', product);
+        // TODO: Add logic to add product to order
+        setShowProductSearch(false);
     };
 
     // Handle form submission
@@ -200,7 +63,6 @@ function OrderEditModal({orderId}: { orderId: string }) {
             close();
         } catch (err) {
             console.error('Error updating order:', err);
-            setError('Failed to update order');
         } finally {
             setIsSaving(false);
         }
@@ -235,6 +97,25 @@ function OrderEditModal({orderId}: { orderId: string }) {
                 <Banner status="critical">
                     {error || 'Failed to load order details'}
                 </Banner>
+            </CustomerAccountAction>
+        );
+    }
+
+    // Show product search modal if active
+    if (showProductSearch) {
+        return (
+            <CustomerAccountAction
+                title="Add Product"
+                secondaryAction={
+                    <Button onPress={() => setShowProductSearch(false)}>
+                        Back
+                    </Button>
+                }
+            >
+                <ProductSearchModal
+                    onProductSelect={handleProductSelect}
+                    onClose={() => setShowProductSearch(false)}
+                />
             </CustomerAccountAction>
         );
     }
@@ -275,51 +156,15 @@ function OrderEditModal({orderId}: { orderId: string }) {
                         </TextBlock>
                     )}
 
-                    <TextBlock emphasis="bold">Order Items:</TextBlock>
+                    <OrderItemsList
+                        items={orderData.lineItems.nodes}
+                        quantities={quantities}
+                        onQuantityChange={handleQuantityChange}
+                    />
 
-                    {orderData.lineItems.nodes.map((item) => (
-                        <BlockStack key={item.id} spacing="tight" border="base" padding="base">
-                            <InlineStack spacing="base" blockAlignment="center">
-                                {item.image?.url && (
-                                    <Image
-                                        source={item.image.url}
-                                        alt={item.image.altText || item.name}
-                                        aspectRatio={1}
-                                        fit="cover"
-                                        width={60}
-                                    />
-                                )}
-
-                                <BlockStack spacing="tight" flex={1}>
-                                    <TextBlock emphasis="bold">{item.name}</TextBlock>
-                                    {item.variantTitle && (
-                                        <TextBlock size="small">{item.variantTitle}</TextBlock>
-                                    )}
-                                    {item.totalPrice && (
-                                        <TextBlock size="small">
-                                            Total: {item.totalPrice.amount} {item.totalPrice.currencyCode}
-                                        </TextBlock>
-                                    )}
-                                    {item.price && (
-                                        <TextBlock size="small">
-                                            Unit Price: {item.price.amount} {item.price.currencyCode}
-                                        </TextBlock>
-                                    )}
-                                </BlockStack>
-
-                                <BlockStack spacing="tight">
-                                    <TextBlock size="small">Quantity:</TextBlock>
-                                    <TextField
-                                        label="Quantity"
-                                        value={quantities[item.id]?.toString() || item.quantity.toString()}
-                                        onChange={(value) => handleQuantityChange(item.id, value)}
-                                        type="number"
-                                        min={0}
-                                    />
-                                </BlockStack>
-                            </InlineStack>
-                        </BlockStack>
-                    ))}
+                    <Button onPress={() => setShowProductSearch(true)}>
+                        Add Product
+                    </Button>
 
                     {hasChanges && (
                         <Banner status="info">

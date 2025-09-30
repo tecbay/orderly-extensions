@@ -4,7 +4,6 @@ import {
     useApi,
 } from "@shopify/ui-extensions-react/customer-account";
 import {useEffect} from "react";
-import {SessionToken} from "@shopify/ui-extensions/checkout";
 
 export default reactExtension(
     "customer-account.order.action.menu-item.render", (api) => {
