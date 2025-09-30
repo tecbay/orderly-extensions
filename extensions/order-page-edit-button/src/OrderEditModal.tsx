@@ -43,10 +43,13 @@ function OrderEditModal({orderId}: { orderId: string }) {
     };
 
     // Handle product selection from search
-    const handleProductSelect = (product: Product) => {
-        console.log('Product selected:', product);
+    const handleProductSelect = (product: Product, quantity: number) => {
+        console.log('Product selected:', product, 'Quantity:', quantity);
         // TODO: Add logic to add product to order
-        setShowProductSearch(false);
+        if (quantity > 0) {
+            // Only close if quantity is selected
+            setShowProductSearch(false);
+        }
     };
 
     // Handle form submission

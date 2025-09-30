@@ -13,12 +13,13 @@ import { useProductSearch } from "../hooks/useProductSearch";
 import { Product } from "../types";
 
 interface ProductSearchModalProps {
-    onProductSelect: (product: Product) => void;
+    onProductSelect: (product: Product, quantity: number) => void;
     onClose: () => void;
 }
 
 export function ProductSearchModal({ onProductSelect, onClose }: ProductSearchModalProps) {
     const [searchQuery, setSearchQuery] = useState("");
+    const [productQuantities, setProductQuantities] = useState<Record<string, number>>({});
     const { products, isSearching, searchError, debouncedSearch } = useProductSearch(true);
 
     const handleSearchChange = (value: string) => {
@@ -26,17 +27,29 @@ export function ProductSearchModal({ onProductSelect, onClose }: ProductSearchMo
         debouncedSearch(value);
     };
 
+    const handleQuantityChange = (productId: string, delta: number) => {
+        setProductQuantities(prev => {
+            const currentQty = prev[productId] || 0;
+            const newQty = Math.max(0, currentQty + delta);
+            return {
+                ...prev,
+                [productId]: newQty
+            };
+        });
+    };
+
+    const getProductQuantity = (productId: string) => {
+        return productQuantities[productId] || 0;
+    };
+
     return (
-        <BlockStack spacing="large">
-            <BlockStack spacing="base">
-                <TextBlock emphasis="bold" size="large">Add Product</TextBlock>
-                <TextField
-                    label="Search products"
-                    value={searchQuery}
-                    onChange={handleSearchChange}
-                    placeholder="Type to search..."
-                />
-            </BlockStack>
+        <BlockStack spacing="base">
+            <TextField
+                label="Search products"
+                value={searchQuery}
+                onChange={handleSearchChange}
+                placeholder="Type to search..."
+            />
 
             {searchError && (
                 <Banner status="critical">
@@ -58,70 +71,71 @@ export function ProductSearchModal({ onProductSelect, onClose }: ProductSearchMo
             )}
 
             {!isSearching && products.length > 0 && (
-                <BlockStack spacing="base">
-                    <TextBlock emphasis="bold" size="medium">
-                        {products.length} {products.length === 1 ? 'Product' : 'Products'} Found
-                    </TextBlock>
-                    <BlockStack spacing="base">
-                        {products.map((product) => (
+                <BlockStack spacing="tight">
+                    {products.map((product) => {
+                        const quantity = getProductQuantity(product.id);
+                        return (
                             <BlockStack
                                 key={product.id}
                                 border="base"
-                                padding="base"
+                                padding="tight"
                                 cornerRadius="base"
                             >
-                                <InlineStack spacing="base" blockAlignment="center">
+                                <InlineStack spacing="tight" blockAlignment="center">
                                     {/* Product Image */}
-                                    <BlockStack>
-                                        {product.featuredImage?.url ? (
-                                            <Image
-                                                source={product.featuredImage.url}
-                                                alt={product.featuredImage.altText || product.title}
-                                                aspectRatio={1}
-                                                fit="cover"
-                                                width={80}
-                                                borderRadius="base"
-                                            />
-                                        ) : (
-                                            <BlockStack
-                                                padding="large"
-                                                border="base"
-                                                cornerRadius="base"
-                                                blockAlignment="center"
-                                                inlineAlignment="center"
-                                            >
-                                                <TextBlock size="small">No image</TextBlock>
-                                            </BlockStack>
-                                        )}
-                                    </BlockStack>
+                                    {product.featuredImage?.url ? (
+                                        <Image
+                                            source={product.featuredImage.url}
+                                            alt={product.featuredImage.altText || product.title}
+                                            aspectRatio={1}
+                                            fit="cover"
+                                            width={60}
+                                            borderRadius="base"
+                                        />
+                                    ) : (
+                                        <BlockStack
+                                            padding="base"
+                                            border="base"
+                                            cornerRadius="base"
+                                            blockAlignment="center"
+                                            inlineAlignment="center"
+                                        >
+                                            <TextBlock size="small">No image</TextBlock>
+                                        </BlockStack>
+                                    )}
 
                                     {/* Product Info */}
-                                    <BlockStack spacing="extraTight" flex={1}>
-                                        <TextBlock emphasis="bold" size="medium">
+                                    <BlockStack spacing="none" flex={1}>
+                                        <TextBlock emphasis="bold">
                                             {product.title}
                                         </TextBlock>
-                                        <TextBlock size="base" appearance="subdued">
+                                        <TextBlock size="small" appearance="subdued">
                                             {parseFloat(product.priceRange.minVariantPrice.amount).toFixed(2)}{" "}
                                             {product.priceRange.minVariantPrice.currencyCode}
                                         </TextBlock>
-                                        {product.variants?.edges && product.variants.edges.length > 0 && (
-                                            <TextBlock size="small" appearance="subdued">
-                                                {product.variants.edges.length} variant{product.variants.edges.length !== 1 ? 's' : ''}
-                                            </TextBlock>
-                                        )}
                                     </BlockStack>
 
-                                    {/* Add Button */}
-                                    <Button
-                                        onPress={() => onProductSelect(product)}
-                                        kind="primary"
-                                    >
-                                        Add
-                                    </Button>
+                                    {/* Quantity Controls */}
+                                    <InlineStack spacing="extraTight" blockAlignment="center">
+                                        <Button
+                                            onPress={() => handleQuantityChange(product.id, -1)}
+                                            disabled={quantity === 0}
+                                        >
+                                            -
+                                        </Button>
+                                        <BlockStack minInlineSize={40} blockAlignment="center" inlineAlignment="center">
+                                            <TextBlock emphasis="bold">{quantity}</TextBlock>
+                                        </BlockStack>
+                                        <Button
+                                            onPress={() => handleQuantityChange(product.id, 1)}
+                                        >
+                                            +
+                                        </Button>
+                                    </InlineStack>
                                 </InlineStack>
                             </BlockStack>
-                        ))}
-                    </BlockStack>
+                        );
+                    })}
                 </BlockStack>
             )}
         </BlockStack>
