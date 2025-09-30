@@ -6,29 +6,24 @@
 api_version = "2025-07"
 
 [[extensions]]
-name = "Order edit button"
-handle = "order-edit-button"
+name = "order-line-item-add"
+handle = "order-line-item-add"
 type = "ui_extension"
-uid = "9e012236-56a0-6118-c5dc-c85333a63bbed44a7ac5"
+uid = "097201fb-aecc-e820-e363-04883043319e9222b75f"
 
 # Controls where in Shopify your extension will be injected,
 # and the file that contains your extension’s source code. Learn more:
 # https://shopify.dev/docs/api/customer-account-ui-extensions/unstable/extension-targets-overview
 
 [[extensions.targeting]]
-module = "./src/OrderEditActionButton.tsx"
-target = "customer-account.order.action.menu-item.render"
-
-
-[[extensions.targeting]]
-module = "./src/OrderEditModal.tsx"
-target = "customer-account.order.action.render"
+target = "customer-account.order-status.cart-line-item.render-after"
+module = "./src/OrderStatusLineItemExtension.tsx"
+export = "orderStatusLineItem"
 
 [extensions.capabilities]
 # Gives your extension access to directly query Shopify’s storefront API.
 # https://shopify.dev/docs/api/customer-account-ui-extensions/unstable/configuration#api-access
 api_access = true
-network_access = true
 
 # Gives your extension access to make external network calls, using the
 # JavaScript `fetch()` API. Learn more:
