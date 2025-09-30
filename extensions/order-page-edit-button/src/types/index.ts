@@ -58,8 +58,10 @@ export interface Product {
             currencyCode: string;
         };
     };
-    variants: {
-        nodes: ProductVariant[];
+    variants?: {
+        edges: Array<{
+            node: ProductVariant;
+        }>;
     };
 }
 

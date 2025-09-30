@@ -15,51 +15,80 @@ interface OrderItemsListProps {
 
 export function OrderItemsList({ items, quantities, onQuantityChange }: OrderItemsListProps) {
     return (
-        <>
-            <TextBlock emphasis="bold">Order Items:</TextBlock>
-            {items.map((item) => (
-                <BlockStack key={item.id} spacing="tight" border="base" padding="base">
-                    <InlineStack spacing="base" blockAlignment="center">
-                        {item.image?.url && (
-                            <Image
-                                source={item.image.url}
-                                alt={item.image.altText || item.name}
-                                aspectRatio={1}
-                                fit="cover"
-                                width={60}
-                            />
-                        )}
+        <BlockStack spacing="base">
+            <TextBlock emphasis="bold" size="medium">Order Items</TextBlock>
+            <BlockStack spacing="base">
+                {items.map((item) => (
+                    <BlockStack
+                        key={item.id}
+                        border="base"
+                        padding="base"
+                        cornerRadius="base"
+                    >
+                        <InlineStack spacing="base" blockAlignment="center">
+                            {/* Product Image */}
+                            <BlockStack>
+                                {item.image?.url ? (
+                                    <Image
+                                        source={item.image.url}
+                                        alt={item.image.altText || item.name}
+                                        aspectRatio={1}
+                                        fit="cover"
+                                        width={80}
+                                        borderRadius="base"
+                                    />
+                                ) : (
+                                    <BlockStack
+                                        padding="large"
+                                        border="base"
+                                        cornerRadius="base"
+                                        blockAlignment="center"
+                                        inlineAlignment="center"
+                                    >
+                                        <TextBlock size="small">No image</TextBlock>
+                                    </BlockStack>
+                                )}
+                            </BlockStack>
 
-                        <BlockStack spacing="tight" flex={1}>
-                            <TextBlock emphasis="bold">{item.name}</TextBlock>
-                            {item.variantTitle && (
-                                <TextBlock size="small">{item.variantTitle}</TextBlock>
-                            )}
-                            {item.totalPrice && (
-                                <TextBlock size="small">
-                                    Total: {item.totalPrice.amount} {item.totalPrice.currencyCode}
+                            {/* Product Info */}
+                            <BlockStack spacing="extraTight" flex={1}>
+                                <TextBlock emphasis="bold" size="medium">
+                                    {item.name}
                                 </TextBlock>
-                            )}
-                            {item.price && (
-                                <TextBlock size="small">
-                                    Unit Price: {item.price.amount} {item.price.currencyCode}
-                                </TextBlock>
-                            )}
-                        </BlockStack>
+                                {item.variantTitle && (
+                                    <TextBlock size="small" appearance="subdued">
+                                        {item.variantTitle}
+                                    </TextBlock>
+                                )}
+                                <InlineStack spacing="base">
+                                    {item.price && (
+                                        <TextBlock size="base" appearance="subdued">
+                                            {parseFloat(item.price.amount).toFixed(2)} {item.price.currencyCode}
+                                        </TextBlock>
+                                    )}
+                                    {item.totalPrice && (
+                                        <TextBlock size="base" emphasis="bold">
+                                            Total: {parseFloat(item.totalPrice.amount).toFixed(2)} {item.totalPrice.currencyCode}
+                                        </TextBlock>
+                                    )}
+                                </InlineStack>
+                            </BlockStack>
 
-                        <BlockStack spacing="tight">
-                            <TextBlock size="small">Quantity:</TextBlock>
-                            <TextField
-                                label="Quantity"
-                                value={quantities[item.id]?.toString() || item.quantity.toString()}
-                                onChange={(value) => onQuantityChange(item.id, value)}
-                                type="number"
-                                min={0}
-                            />
-                        </BlockStack>
-                    </InlineStack>
-                </BlockStack>
-            ))}
-        </>
+                            {/* Quantity Control */}
+                            <BlockStack spacing="extraTight" minInlineSize={80}>
+                                <TextBlock size="small" emphasis="bold">Quantity</TextBlock>
+                                <TextField
+                                    label="Quantity"
+                                    value={quantities[item.id]?.toString() || item.quantity.toString()}
+                                    onChange={(value) => onQuantityChange(item.id, value)}
+                                    type="number"
+                                    min={0}
+                                />
+                            </BlockStack>
+                        </InlineStack>
+                    </BlockStack>
+                ))}
+            </BlockStack>
+        </BlockStack>
     );
 }
