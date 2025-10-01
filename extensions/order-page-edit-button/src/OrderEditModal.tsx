@@ -32,6 +32,7 @@ function OrderEditModal({orderId}: { orderId: string }) {
 
     const [isSaving, setIsSaving] = useState(false);
     const [showProductSearch, setShowProductSearch] = useState(false);
+    const [selectedVariants, setSelectedVariants] = useState<Array<{ variant: VariantWithProduct; quantity: number }>>([]);
 
     // Handle quantity changes
     const handleQuantityChange = (lineItemId: string, newQuantity: string) => {
@@ -52,11 +53,14 @@ function OrderEditModal({orderId}: { orderId: string }) {
             sku: variant.sku,
             quantity: quantity
         });
-        // TODO: Add logic to add variant to order
-        if (quantity > 0) {
-            // Only close if quantity is selected
-            setShowProductSearch(false);
-        }
+
+        // Add variant to selected list
+        setSelectedVariants(prev => [...prev, { variant, quantity }]);
+    };
+
+    // Handle variant deletion
+    const handleVariantDelete = (variantId: string) => {
+        setSelectedVariants(prev => prev.filter(item => item.variant.variantId !== variantId));
     };
 
     // Handle form submission
@@ -116,6 +120,14 @@ function OrderEditModal({orderId}: { orderId: string }) {
         return (
             <CustomerAccountAction
                 title="Add Product"
+                primaryAction={
+                    <Button
+                        onPress={() => setShowProductSearch(false)}
+                        disabled={selectedVariants.length === 0}
+                    >
+                        Done ({selectedVariants.length})
+                    </Button>
+                }
                 secondaryAction={
                     <Button onPress={() => setShowProductSearch(false)}>
                         Back
@@ -124,6 +136,8 @@ function OrderEditModal({orderId}: { orderId: string }) {
             >
                 <ProductSearchModal
                     onVariantSelect={handleVariantSelect}
+                    onVariantDelete={handleVariantDelete}
+                    selectedVariants={selectedVariants}
                     onClose={() => setShowProductSearch(false)}
                 />
             </CustomerAccountAction>

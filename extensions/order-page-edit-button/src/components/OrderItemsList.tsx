@@ -1,9 +1,11 @@
 import {
     BlockStack,
     InlineStack,
+    InlineLayout,
     TextBlock,
     TextField,
     Image,
+    View,
 } from "@shopify/ui-extensions-react/customer-account";
 import { LineItem } from "../types";
 
@@ -25,58 +27,63 @@ export function OrderItemsList({ items, quantities, onQuantityChange }: OrderIte
                         padding="base"
                         cornerRadius="base"
                     >
-                        <InlineStack spacing="base" blockAlignment="center">
+                        <InlineLayout spacing="base" blockAlignment="center" columns={["auto", "fill", "auto"]}>
                             {/* Product Image */}
-                            {item.image?.url ? (
-                                <Image
-                                    source={item.image.url}
-                                    alt={item.image.altText || item.name}
-                                    aspectRatio={1}
-                                    fit="cover"
-                                    width={60}
-                                    borderRadius="base"
-                                />
-                            ) : (
-                                <BlockStack
-                                    minInlineSize={60}
-                                    minBlockSize={60}
-                                    border="base"
-                                    cornerRadius="base"
-                                    blockAlignment="center"
-                                    inlineAlignment="center"
-                                >
-                                    <TextBlock size="small" appearance="subdued">No image</TextBlock>
-                                </BlockStack>
-                            )}
+                            <View>
+                                {item.image?.url ? (
+                                    <Image
+                                        source={item.image.url}
+                                        alt={item.image.altText || item.name}
+                                        aspectRatio={1}
+                                        fit="cover"
+                                        width={60}
+                                        borderRadius="base"
+                                    />
+                                ) : (
+                                    <BlockStack
+                                        minInlineSize={60}
+                                        minBlockSize={60}
+                                        border="base"
+                                        cornerRadius="base"
+                                        blockAlignment="center"
+                                        inlineAlignment="center"
+                                    >
+                                        <TextBlock size="small" appearance="subdued">No image</TextBlock>
+                                    </BlockStack>
+                                )}
+                            </View>
 
                             {/* Product Info */}
-                            <BlockStack spacing="extraTight" flex={1}>
-                                <TextBlock emphasis="bold">
-                                    {item.name}
-                                </TextBlock>
-                                {item.variantTitle && (
-                                    <TextBlock size="small" appearance="subdued">
-                                        {item.variantTitle}
+                            <View>
+                                <BlockStack spacing="extraTight">
+                                    <TextBlock emphasis="bold">
+                                        {item.name}
                                     </TextBlock>
-                                )}
-                                <TextBlock size="small" appearance="subdued">
-                                    {item.price && `${parseFloat(item.price.amount).toFixed(2)} ${item.price.currencyCode}`}
-                                    {item.totalPrice && ` • Total: ${parseFloat(item.totalPrice.amount).toFixed(2)} ${item.totalPrice.currencyCode}`}
-                                </TextBlock>
-                            </BlockStack>
+                                    {item.variantTitle && (
+                                        <TextBlock size="small" appearance="subdued">
+                                            {item.variantTitle}
+                                        </TextBlock>
+                                    )}
+                                    <TextBlock size="small" appearance="subdued">
+                                        {item.price && `${parseFloat(item.price.amount).toFixed(2)} ${item.price.currencyCode}`}
+                                        {item.totalPrice && ` • Total: ${parseFloat(item.totalPrice.amount).toFixed(2)} ${item.totalPrice.currencyCode}`}
+                                    </TextBlock>
+                                </BlockStack>
+                            </View>
 
                             {/* Quantity Control */}
-                            <BlockStack spacing="extraTight" minInlineSize={70}>
-                                <TextBlock size="small" appearance="subdued">Qty</TextBlock>
-                                <TextField
-                                    label="Quantity"
-                                    value={quantities[item.id]?.toString() || item.quantity.toString()}
-                                    onChange={(value) => onQuantityChange(item.id, value)}
-                                    type="number"
-                                    min={0}
-                                />
-                            </BlockStack>
-                        </InlineStack>
+                            <View>
+                                <BlockStack spacing="extraTight" minInlineSize={70}>
+                                    <TextField
+                                        label="Quantity"
+                                        value={quantities[item.id]?.toString() || item.quantity.toString()}
+                                        onChange={(value) => onQuantityChange(item.id, value)}
+                                        type="number"
+                                        min={0}
+                                    />
+                                </BlockStack>
+                            </View>
+                        </InlineLayout>
                     </BlockStack>
                 ))}
             </BlockStack>
