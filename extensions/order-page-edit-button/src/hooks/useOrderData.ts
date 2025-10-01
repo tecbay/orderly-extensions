@@ -15,13 +15,14 @@ export function useOrderData(orderId: string) {
         }
     };
 
+    // @ts-ignore
     async function fetchOrderData() {
         try {
             setIsLoading(true);
             setError(null);
 
             const result = await fetch(
-                "shopify://customer-account/api/2024-10/graphql.json",
+                "shopify://customer-account/api/2025-07/graphql.json",
                 {
                     method: "POST",
                     headers: {
@@ -33,6 +34,8 @@ export function useOrderData(orderId: string) {
 
             const response = await result.json();
 
+            console.log('Order data response:', JSON.stringify(response, null, 2));
+
             if (response.errors) {
                 console.error('GraphQL errors:', response.errors);
                 setError('Failed to load order data. Please ensure protected customer data access is enabled.');
@@ -41,6 +44,7 @@ export function useOrderData(orderId: string) {
 
             if (response.data?.order) {
                 const order = response.data.order;
+                console.log('Order line items:', order.lineItems.nodes);
                 setOrderData(order);
 
                 // Initialize quantities with current order quantities

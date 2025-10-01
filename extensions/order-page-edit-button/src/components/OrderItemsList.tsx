@@ -5,7 +5,7 @@ import {
     TextBlock,
     TextField,
     Image,
-    View,
+    View, ProductThumbnail,
 } from "@shopify/ui-extensions-react/customer-account";
 import { LineItem } from "../types";
 
@@ -30,27 +30,7 @@ export function OrderItemsList({ items, quantities, onQuantityChange }: OrderIte
                         <InlineLayout spacing="base" blockAlignment="center" columns={["auto", "fill", "auto"]}>
                             {/* Product Image */}
                             <View>
-                                {item.image?.url ? (
-                                    <Image
-                                        source={item.image.url}
-                                        alt={item.image.altText || item.name}
-                                        aspectRatio={1}
-                                        fit="cover"
-                                        width={60}
-                                        borderRadius="base"
-                                    />
-                                ) : (
-                                    <BlockStack
-                                        minInlineSize={60}
-                                        minBlockSize={60}
-                                        border="base"
-                                        cornerRadius="base"
-                                        blockAlignment="center"
-                                        inlineAlignment="center"
-                                    >
-                                        <TextBlock size="small" appearance="subdued">No image</TextBlock>
-                                    </BlockStack>
-                                )}
+                                <ProductThumbnail source={item.image?.url} badge={item.quantity}/>
                             </View>
 
                             {/* Product Info */}

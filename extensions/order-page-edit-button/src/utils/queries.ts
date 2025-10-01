@@ -36,7 +36,7 @@ query GetOrder($orderId: ID!) {
           currencyCode
         }
         image {
-          url
+          url(transform: { maxWidth: 100, maxHeight: 100 })
           altText
         }
       }
