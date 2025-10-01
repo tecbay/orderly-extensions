@@ -22,10 +22,10 @@ export function OrderItemsList({ items, quantities, onQuantityChange }: OrderIte
                     <BlockStack
                         key={item.id}
                         border="base"
-                        padding="tight"
+                        padding="base"
                         cornerRadius="base"
                     >
-                        <InlineStack spacing="tight" blockAlignment="center">
+                        <InlineStack spacing="base" blockAlignment="center">
                             {/* Product Image */}
                             {item.image?.url ? (
                                 <Image
@@ -38,18 +38,19 @@ export function OrderItemsList({ items, quantities, onQuantityChange }: OrderIte
                                 />
                             ) : (
                                 <BlockStack
-                                    padding="base"
+                                    minInlineSize={60}
+                                    minBlockSize={60}
                                     border="base"
                                     cornerRadius="base"
                                     blockAlignment="center"
                                     inlineAlignment="center"
                                 >
-                                    <TextBlock size="small">No image</TextBlock>
+                                    <TextBlock size="small" appearance="subdued">No image</TextBlock>
                                 </BlockStack>
                             )}
 
                             {/* Product Info */}
-                            <BlockStack spacing="none" flex={1}>
+                            <BlockStack spacing="extraTight" flex={1}>
                                 <TextBlock emphasis="bold">
                                     {item.name}
                                 </TextBlock>
@@ -65,8 +66,8 @@ export function OrderItemsList({ items, quantities, onQuantityChange }: OrderIte
                             </BlockStack>
 
                             {/* Quantity Control */}
-                            <BlockStack spacing="none" minInlineSize={60}>
-                                <TextBlock size="small">Qty</TextBlock>
+                            <BlockStack spacing="extraTight" minInlineSize={70}>
+                                <TextBlock size="small" appearance="subdued">Qty</TextBlock>
                                 <TextField
                                     label="Quantity"
                                     value={quantities[item.id]?.toString() || item.quantity.toString()}

@@ -77,4 +77,22 @@ export interface ProductVariant {
         url: string;
         altText?: string;
     };
+    sku?: string;
+}
+
+export interface VariantWithProduct {
+    variantId: string;
+    variantTitle: string;
+    productId: string;
+    productTitle: string;
+    price: {
+        amount: string;
+        currencyCode: string;
+    };
+    availableForSale: boolean;
+    image?: {
+        url: string;
+        altText?: string;
+    };
+    sku?: string;
 }

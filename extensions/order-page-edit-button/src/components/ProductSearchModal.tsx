@@ -10,36 +10,36 @@ import {
     Banner,
 } from "@shopify/ui-extensions-react/customer-account";
 import { useProductSearch } from "../hooks/useProductSearch";
-import { Product } from "../types";
+import { VariantWithProduct } from "../types";
 
 interface ProductSearchModalProps {
-    onProductSelect: (product: Product, quantity: number) => void;
+    onVariantSelect: (variant: VariantWithProduct, quantity: number) => void;
     onClose: () => void;
 }
 
-export function ProductSearchModal({ onProductSelect, onClose }: ProductSearchModalProps) {
+export function ProductSearchModal({ onVariantSelect, onClose }: ProductSearchModalProps) {
     const [searchQuery, setSearchQuery] = useState("");
-    const [productQuantities, setProductQuantities] = useState<Record<string, number>>({});
-    const { products, isSearching, searchError, debouncedSearch } = useProductSearch(true);
+    const [variantQuantities, setVariantQuantities] = useState<Record<string, number>>({});
+    const { variants, isSearching, searchError, debouncedSearch } = useProductSearch(true);
 
     const handleSearchChange = (value: string) => {
         setSearchQuery(value);
         debouncedSearch(value);
     };
 
-    const handleQuantityChange = (productId: string, delta: number) => {
-        setProductQuantities(prev => {
-            const currentQty = prev[productId] || 0;
+    const handleQuantityChange = (variantId: string, delta: number) => {
+        setVariantQuantities(prev => {
+            const currentQty = prev[variantId] || 0;
             const newQty = Math.max(0, currentQty + delta);
             return {
                 ...prev,
-                [productId]: newQty
+                [variantId]: newQty
             };
         });
     };
 
-    const getProductQuantity = (productId: string) => {
-        return productQuantities[productId] || 0;
+    const getVariantQuantity = (variantId: string) => {
+        return variantQuantities[variantId] || 0;
     };
 
     return (
@@ -64,29 +64,29 @@ export function ProductSearchModal({ onProductSelect, onClose }: ProductSearchMo
                 </BlockStack>
             )}
 
-            {!isSearching && products.length === 0 && searchQuery && (
+            {!isSearching && variants.length === 0 && searchQuery && (
                 <Banner status="info">
-                    No products found. Try a different search term.
+                    No variants found. Try a different search term.
                 </Banner>
             )}
 
-            {!isSearching && products.length > 0 && (
+            {!isSearching && variants.length > 0 && (
                 <BlockStack spacing="tight">
-                    {products.map((product) => {
-                        const quantity = getProductQuantity(product.id);
+                    {variants.map((variant) => {
+                        const quantity = getVariantQuantity(variant.variantId);
                         return (
                             <BlockStack
-                                key={product.id}
+                                key={variant.variantId}
                                 border="base"
-                                padding="tight"
+                                padding="base"
                                 cornerRadius="base"
                             >
-                                <InlineStack spacing="tight" blockAlignment="center">
-                                    {/* Product Image */}
-                                    {product.featuredImage?.url ? (
+                                <InlineStack spacing="base" blockAlignment="center">
+                                    {/* Variant Image */}
+                                    {variant.image?.url ? (
                                         <Image
-                                            source={product.featuredImage.url}
-                                            alt={product.featuredImage.altText || product.title}
+                                            source={variant.image.url}
+                                            alt={variant.image.altText || variant.productTitle}
                                             aspectRatio={1}
                                             fit="cover"
                                             width={60}
@@ -94,40 +94,47 @@ export function ProductSearchModal({ onProductSelect, onClose }: ProductSearchMo
                                         />
                                     ) : (
                                         <BlockStack
-                                            padding="base"
+                                            minInlineSize={60}
+                                            minBlockSize={60}
                                             border="base"
                                             cornerRadius="base"
                                             blockAlignment="center"
                                             inlineAlignment="center"
                                         >
-                                            <TextBlock size="small">No image</TextBlock>
+                                            <TextBlock size="small" appearance="subdued">No image</TextBlock>
                                         </BlockStack>
                                     )}
 
-                                    {/* Product Info */}
-                                    <BlockStack spacing="none" flex={1}>
+                                    {/* Variant Info */}
+                                    <BlockStack spacing="extraTight" flex={1}>
                                         <TextBlock emphasis="bold">
-                                            {product.title}
+                                            {variant.productTitle}
                                         </TextBlock>
+                                        {variant.variantTitle !== "Default Title" && (
+                                            <TextBlock size="small" appearance="subdued">
+                                                {variant.variantTitle}
+                                            </TextBlock>
+                                        )}
                                         <TextBlock size="small" appearance="subdued">
-                                            {parseFloat(product.priceRange.minVariantPrice.amount).toFixed(2)}{" "}
-                                            {product.priceRange.minVariantPrice.currencyCode}
+                                            {parseFloat(variant.price.amount).toFixed(2)}{" "}
+                                            {variant.price.currencyCode}
+                                            {variant.sku && ` • SKU: ${variant.sku}`}
                                         </TextBlock>
                                     </BlockStack>
 
                                     {/* Quantity Controls */}
-                                    <InlineStack spacing="extraTight" blockAlignment="center">
+                                    <InlineStack spacing="tight" blockAlignment="center">
                                         <Button
-                                            onPress={() => handleQuantityChange(product.id, -1)}
+                                            onPress={() => handleQuantityChange(variant.variantId, -1)}
                                             disabled={quantity === 0}
+                                            kind="secondary"
                                         >
-                                            -
+                                            −
                                         </Button>
-                                        <BlockStack minInlineSize={40} blockAlignment="center" inlineAlignment="center">
-                                            <TextBlock emphasis="bold">{quantity}</TextBlock>
-                                        </BlockStack>
+                                        <TextBlock emphasis="bold" size="medium">{quantity}</TextBlock>
                                         <Button
-                                            onPress={() => handleQuantityChange(product.id, 1)}
+                                            onPress={() => handleQuantityChange(variant.variantId, 1)}
+                                            kind="secondary"
                                         >
                                             +
                                         </Button>

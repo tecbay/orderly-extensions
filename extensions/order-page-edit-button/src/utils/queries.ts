@@ -45,36 +45,43 @@ query GetOrder($orderId: ID!) {
 }
 `;
 
-// GraphQL query for searching products via Storefront API
-export const SEARCH_PRODUCTS_QUERY = `
-query SearchProducts($query: String!, $first: Int!) {
-  products(first: $first, query: $query) {
-    edges {
-      node {
-        id
-        title
-        handle
-        featuredImage {
-          url
-          altText
-        }
-        priceRange {
-          minVariantPrice {
-            amount
-            currencyCode
-          }
-        }
-        variants(first: 10) {
-          edges {
-            node {
+// GraphQL query for searching product variants via Storefront Predictive Search API
+export const SEARCH_VARIANTS_QUERY = `
+query SearchVariants($query: String!) {
+  predictiveSearch(
+    query: $query
+    limit: 10
+    limitScope: EACH
+    searchableFields: [TITLE, PRODUCT_TYPE, VARIANTS_TITLE, VENDOR, VARIANTS_SKU]
+    types: [PRODUCT]
+    unavailableProducts: SHOW
+  ) {
+    products {
+      id
+      title
+      featuredImage {
+        url
+        altText
+      }
+      variants(first: 50) {
+        edges {
+          node {
+            id
+            title
+            price {
+              amount
+              currencyCode
+            }
+            availableForSale
+            image {
+              url
+              altText
+            }
+            sku
+            product {
               id
               title
-              priceV2 {
-                amount
-                currencyCode
-              }
-              availableForSale
-              image {
+              featuredImage {
                 url
                 altText
               }

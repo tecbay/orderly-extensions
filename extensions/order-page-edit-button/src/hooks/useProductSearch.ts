@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef } from "react";
-import { Product } from "../types";
-import { SEARCH_PRODUCTS_QUERY } from "../utils/queries";
+import { VariantWithProduct } from "../types";
+import { SEARCH_VARIANTS_QUERY } from "../utils/queries";
 
 export function useProductSearch(initialFetch = true) {
-    const [products, setProducts] = useState<Product[]>([]);
+    const [variants, setVariants] = useState<VariantWithProduct[]>([]);
     const [isSearching, setIsSearching] = useState(false);
     const [searchError, setSearchError] = useState<string | null>(null);
     const debounceTimer = useRef<NodeJS.Timeout | null>(null);
@@ -30,7 +30,7 @@ export function useProductSearch(initialFetch = true) {
                         "Content-Type": "application/json",
                     },
                     body: JSON.stringify({
-                        query: SEARCH_PRODUCTS_QUERY,
+                        query: SEARCH_VARIANTS_QUERY,
                         variables: {
                             query: query.trim() || "*",
                             first: 20
@@ -41,7 +41,7 @@ export function useProductSearch(initialFetch = true) {
 
             console.log('Fetch response status:', result.status);
             const response = await result.json();
-            console.log('Product search response:', response);
+            console.log('Variant search response:', response);
 
             if (response.errors) {
                 console.error('GraphQL errors:', response.errors);
@@ -49,18 +49,37 @@ export function useProductSearch(initialFetch = true) {
                 return;
             }
 
-            if (response.data?.products?.edges) {
-                const products = response.data.products.edges.map((edge: any) => edge.node);
-                console.log('Found products:', products.length);
-                setProducts(products);
+            if (response.data?.predictiveSearch?.products) {
+                // Flatten variants from all products
+                // Each variant now contains its own product reference
+                const allVariants: VariantWithProduct[] = [];
+                response.data.predictiveSearch.products.forEach((product: any) => {
+                    product.variants.edges.forEach((variantEdge: any) => {
+                        const variant = variantEdge.node;
+                        // Use variant's own product reference if available, fallback to parent
+                        const variantProduct = variant.product || product;
+                        allVariants.push({
+                            variantId: variant.id,
+                            variantTitle: variant.title,
+                            productId: variantProduct.id,
+                            productTitle: variantProduct.title,
+                            price: variant.price,
+                            availableForSale: variant.availableForSale,
+                            image: variant.image || product.featuredImage,
+                            sku: variant.sku
+                        });
+                    });
+                });
+                console.log('Found variants:', allVariants.length);
+                setVariants(allVariants);
             } else {
-                console.log('No products found in response');
-                setProducts([]);
+                console.log('No products/variants found in response');
+                setVariants([]);
             }
         } catch (err) {
             console.error('Error searching products:', err);
             setSearchError(`Failed to search products: ${err instanceof Error ? err.message : 'Unknown error'}`);
-            setProducts([]);
+            setVariants([]);
         } finally {
             setIsSearching(false);
         }
@@ -88,7 +107,7 @@ export function useProductSearch(initialFetch = true) {
     }, []);
 
     return {
-        products,
+        variants,
         isSearching,
         searchError,
         searchProducts,

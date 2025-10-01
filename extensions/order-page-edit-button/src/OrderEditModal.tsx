@@ -10,7 +10,7 @@ import {
     Spinner
 } from "@shopify/ui-extensions-react/customer-account";
 import { useState } from "react";
-import { OrderData, Product } from "./types";
+import { OrderData, VariantWithProduct } from "./types";
 import { useOrderData } from "./hooks/useOrderData";
 import { OrderItemsList } from "./components/OrderItemsList";
 import { ProductSearchModal } from "./components/ProductSearchModal";
@@ -42,10 +42,17 @@ function OrderEditModal({orderId}: { orderId: string }) {
         }));
     };
 
-    // Handle product selection from search
-    const handleProductSelect = (product: Product, quantity: number) => {
-        console.log('Product selected:', product, 'Quantity:', quantity);
-        // TODO: Add logic to add product to order
+    // Handle variant selection from search
+    const handleVariantSelect = (variant: VariantWithProduct, quantity: number) => {
+        console.log('Variant selected:', {
+            variantId: variant.variantId,
+            variantTitle: variant.variantTitle,
+            productTitle: variant.productTitle,
+            price: variant.price,
+            sku: variant.sku,
+            quantity: quantity
+        });
+        // TODO: Add logic to add variant to order
         if (quantity > 0) {
             // Only close if quantity is selected
             setShowProductSearch(false);
@@ -116,7 +123,7 @@ function OrderEditModal({orderId}: { orderId: string }) {
                 }
             >
                 <ProductSearchModal
-                    onProductSelect={handleProductSelect}
+                    onVariantSelect={handleVariantSelect}
                     onClose={() => setShowProductSearch(false)}
                 />
             </CustomerAccountAction>
