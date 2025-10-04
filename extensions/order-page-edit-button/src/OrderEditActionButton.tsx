@@ -7,8 +7,6 @@ import {useEffect} from "react";
 
 export default reactExtension(
     "customer-account.order.action.menu-item.render", (api) => {
-        console.log('OrderEditActionButton API:', api);
-
 
 
         // const {getSessionToken} = useSessionToken();

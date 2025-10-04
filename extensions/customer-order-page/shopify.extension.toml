@@ -7,7 +7,7 @@ api_version = "2025-07"
 
 [[extensions]]
 name = "customer-order-page"
-handle = "customer-order-full-page"
+handle = "order-full-page-edit"
 type = "ui_extension"
 uid = "f1307416-5276-eba1-ee17-c0e41587c3e12b2e4f6e"
 
