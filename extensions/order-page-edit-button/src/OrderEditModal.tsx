@@ -22,27 +22,37 @@ export default reactExtension(
 
 
 function OrderEditModal({orderId}: { orderId: string }) {
-    const urs = 'extension:$order-full-page-edit/order/4512433012785';
     const {navigation} = useApi()
 
+    // Extract numeric ID from GID for URL
+    const extractIdFromGid = (gid: string) => {
+        const parts = gid.split('/');
+        return parts[parts.length - 1];
+    };
+
+    const numericOrderId = extractIdFromGid(orderId);
+    const extensionUrl = `extension:$order-full-page-edit/order/${numericOrderId}`;
+
     function gotoOrder() {
-        console.log("urs", urs);
+        console.log("Navigating to:", extensionUrl);
+        console.log("Order ID:", orderId, "Numeric:", numericOrderId);
+        navigation.navigate(extensionUrl);
     }
 
     return (
         <CustomerAccountAction
-            title="Add Product"
+            title="Confirm Edit Order"
             primaryAction={
-                <Button
-                    onPress={() => {
-                        console.log(urs)
-                        navigation.navigate(urs)
-                    }}
-                >
-                    Done
+                <Button onPress={gotoOrder}>
+                    Proceed to Edit
                 </Button>
             }
         >
+            <BlockStack spacing="base">
+                <TextBlock>
+                    You are about to edit order. Click "Proceed to Edit" to continue to the full editing page.
+                </TextBlock>
+            </BlockStack>
         </CustomerAccountAction>
     );
 }
