@@ -34,9 +34,9 @@ function PrimaryActionButton({hasChanges, allQuantitiesZero, isSaving, handleSav
 
     return (
         <>
-            <Button appearance={'critical'} kind={'plain'}>
-                Discard
-            </Button>
+            {/*<Button appearance={'critical'} kind={'plain'}>*/}
+            {/*    Discard*/}
+            {/*</Button>*/}
             <Button
                 onPress={handleSave}
                 kind={"secondary"}
