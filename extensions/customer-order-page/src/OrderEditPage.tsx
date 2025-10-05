@@ -3,7 +3,6 @@ import {
     Page,
     BlockStack,
     TextBlock,
-    useOrder,
     InlineStack,
     Button,
     Grid,
@@ -11,7 +10,8 @@ import {
     Heading,
     Divider,
     Banner,
-    TextField, Modal, Link,
+    TextField,
+    Modal,
 } from "@shopify/ui-extensions-react/customer-account";
 import {useState} from "react";
 import {VariantWithProduct} from "../../../extensions/order-edit-button/src/types";
@@ -71,6 +71,7 @@ function OrderPage({api}) {
         setSelectedVariants(prev => prev.filter(item => item.variant.variantId !== variantId));
     };
 
+    // @ts-ignore
     const handleSave = async () => {
         setIsSaving(true);
         try {
@@ -96,90 +97,73 @@ function OrderPage({api}) {
         );
     }
 
-    if (showProductSearch) {
-        return (
-            <Page title="Add Products">
-                <BlockStack spacing="base">
-                    <InlineStack spacing="base">
-                        <Button onPress={() => setShowProductSearch(false)}>
-                            ← Back to Order
-                        </Button>
-                        <Button
-                            onPress={() => setShowProductSearch(false)}
-                            disabled={selectedVariants.length === 0}
-                        >
-                            Done ({selectedVariants.length})
-                        </Button>
-                    </InlineStack>
-
-                    <ProductSearchModal
-                        onVariantSelect={handleVariantSelect}
-                        onVariantDelete={handleVariantDelete}
-                        selectedVariants={selectedVariants}
-                        onClose={() => setShowProductSearch(false)}
-                    />
-                </BlockStack>
-            </Page>
-        );
-    }
-
     const hasChanges = lineItems.some((item: any) =>
         quantities[item.id] !== item.quantity
     ) || selectedVariants.length > 0;
 
     return (
         <Page
+            subtitle="Edit order"
             title={`Order ${order.current.name}`}
             primaryAction={
                 <Button
                     overlay={
                         <Modal
-                            id="my-modal"
-                            padding
+                            id="add-product-modal"
+                            padding={false}
                             title="Add Items"
+                            primaryAction={
+                                <Button kind="primary">
+                                    Done ({selectedVariants.length})
+                                </Button>
+                            }
                         >
-                            // Product search should go here
+                            <BlockStack spacing="none">
+                                <BlockStack spacing="base" padding="base" border="base">
+                                    <ProductSearchModal
+                                        onVariantSelect={handleVariantSelect}
+                                        onVariantDelete={handleVariantDelete}
+                                        selectedVariants={selectedVariants}
+                                        onClose={() => setShowProductSearch(false)}
+                                    />
+                                </BlockStack>
+                            </BlockStack>
                         </Modal>
                     }
                 >
                     Add items
                 </Button>
-
+            }
+            secondaryAction={
+                <Button
+                    onPress={handleSave}
+                    kind={hasChanges ? "primary" : "secondary"}
+                    loading={isSaving}
+                    disabled={!hasChanges}
+                >
+                    {isSaving ? 'Saving...' : 'Save Changes'}
+                </Button>
             }
         >
-            <BlockStack spacing="base">
-                {/* Header with Save button */}
-                <InlineStack spacing="base" blockAlignment="center">
-                    <Heading level={2}>Order Details</Heading>
-                    <Button
-                        onPress={handleSave}
-                        loading={isSaving}
-                        disabled={!hasChanges}
-                    >
-                        {isSaving ? 'Saving...' : 'Save Changes'}
-                    </Button>
-                </InlineStack>
-
+            <BlockStack spacing={'base'}>
                 {hasChanges && (
                     <Banner status="info">
                         You have unsaved changes.
                     </Banner>
                 )}
 
-                <Divider/>
-
                 {/* Two Column Layout */}
-                <Grid columns={['fill', 'fill']} spacing="base">
+                <Grid columns={['fill', 'fill']} spacing={'base'}>
                     {/* Left Column - Addresses */}
                     <GridItem>
-                        <BlockStack spacing="base">
+                        <BlockStack spacing={'base'}>
                             {/* Billing Address */}
-                            <BlockStack spacing="tight">
+                            <BlockStack spacing="base" border="base" padding="base">
                                 <Heading level={3}>Billing Address</Heading>
                                 <Divider/>
                                 {billingAddress?.current ? (
                                     <BlockStack spacing="extraTight">
-                                        <TextBlock>
+                                        <TextBlock emphasis="bold">
                                             {billingAddress.current.firstName} {billingAddress.current.lastName}
                                         </TextBlock>
                                         <TextBlock>{billingAddress.current.address1 || ''}</TextBlock>
@@ -191,21 +175,21 @@ function OrderPage({api}) {
                                         </TextBlock>
                                         <TextBlock>{billingAddress.current.countryCode}</TextBlock>
                                         {billingAddress.current.phone && (
-                                            <TextBlock>{billingAddress.current.phone}</TextBlock>
+                                            <TextBlock appearance="subdued">{billingAddress.current.phone}</TextBlock>
                                         )}
                                     </BlockStack>
                                 ) : (
-                                    <TextBlock>No billing address</TextBlock>
+                                    <TextBlock appearance="subdued">No billing address</TextBlock>
                                 )}
                             </BlockStack>
 
                             {/* Shipping Address */}
-                            <BlockStack spacing="tight">
+                            <BlockStack spacing="base" border="base" padding="base">
                                 <Heading level={3}>Shipping Address</Heading>
                                 <Divider/>
                                 {shippingAddress?.current ? (
                                     <BlockStack spacing="extraTight">
-                                        <TextBlock>
+                                        <TextBlock emphasis="bold">
                                             {shippingAddress.current.firstName} {shippingAddress.current.lastName}
                                         </TextBlock>
                                         <TextBlock>{shippingAddress.current.address1 || ''}</TextBlock>
@@ -217,11 +201,11 @@ function OrderPage({api}) {
                                         </TextBlock>
                                         <TextBlock>{shippingAddress.current.countryCode}</TextBlock>
                                         {shippingAddress.current.phone && (
-                                            <TextBlock>{shippingAddress.current.phone}</TextBlock>
+                                            <TextBlock appearance="subdued">{shippingAddress.current.phone}</TextBlock>
                                         )}
                                     </BlockStack>
                                 ) : (
-                                    <TextBlock>No shipping address</TextBlock>
+                                    <TextBlock appearance="subdued">No shipping address</TextBlock>
                                 )}
                             </BlockStack>
                         </BlockStack>
@@ -229,96 +213,108 @@ function OrderPage({api}) {
 
                     {/* Right Column - Line Items */}
                     <GridItem>
-                        <BlockStack spacing="base">
-                            <InlineStack spacing="base" blockAlignment="center">
-                                <Heading level={3}>Order Items</Heading>
-                            </InlineStack>
+                        <BlockStack spacing={'extraTight'} border="base" padding="base">
+                            <Heading level={3}>Order Items</Heading>
                             <Divider/>
 
-                            {/* Line Items List */}
-                            <BlockStack spacing="base">
-                                {lineItems.map((item: any) => (
-                                    <BlockStack key={item.id} spacing="tight">
-                                        <InlineStack spacing="base" blockAlignment="center">
-                                            <BlockStack spacing="extraTight">
-                                                <TextBlock>{item.merchandise?.product?.title || item.title}</TextBlock>
-                                                {item.merchandise?.title && (
-                                                    <TextBlock appearance="subdued" size="small">
-                                                        {item.merchandise.title}
-                                                    </TextBlock>
-                                                )}
-                                                <TextBlock size="small">
-                                                    Price: {item.price?.amount || item.cost?.totalAmount?.amount} {item.price?.currencyCode || item.cost?.totalAmount?.currencyCode}
-                                                </TextBlock>
-                                            </BlockStack>
-                                            <TextField
-                                                label="Quantity"
-                                                type="number"
-                                                value={quantities[item.id]?.toString() || item.quantity?.toString() || '0'}
-                                                onChange={(value) => handleQuantityChange(item.id, value)}
-                                            />
-                                        </InlineStack>
-                                        <Divider/>
-                                    </BlockStack>
-                                ))}
+                                {/* Line Items List */}
+                                <BlockStack spacing="base">
+                                    {lineItems.map((item: any) => (
+                                        <BlockStack key={item.id} spacing="tight">
+                                            <Grid columns={['fill', 'auto']} spacing="base">
+                                                <GridItem>
+                                                    <BlockStack spacing="extraTight">
+                                                        <TextBlock emphasis="bold">
+                                                            {item.merchandise?.product?.title || item.title}
+                                                        </TextBlock>
+                                                        {item.merchandise?.title && (
+                                                            <TextBlock appearance="subdued" size="small">
+                                                                {item.merchandise.title}
+                                                            </TextBlock>
+                                                        )}
+                                                        <TextBlock size="small" appearance="subdued">
+                                                            {item.price?.amount || item.cost?.totalAmount?.amount} {item.price?.currencyCode || item.cost?.totalAmount?.currencyCode}
+                                                        </TextBlock>
+                                                    </BlockStack>
+                                                </GridItem>
+                                                <GridItem>
+                                                    <TextField
+                                                        label="Qty"
+                                                        type="number"
+                                                        value={quantities[item.id]?.toString() || item.quantity?.toString() || '0'}
+                                                        onChange={(value) => handleQuantityChange(item.id, value)}
+                                                    />
+                                                </GridItem>
+                                            </Grid>
+                                            <Divider/>
+                                        </BlockStack>
+                                    ))}
 
-                                {/* New variants to add */}
-                                {selectedVariants.map((item, index) => (
-                                    <BlockStack key={`new-${index}`} spacing="tight">
-                                        <InlineStack spacing="base" blockAlignment="center">
-                                            <BlockStack spacing="extraTight">
-                                                <TextBlock>{item.variant.productTitle}</TextBlock>
-                                                <TextBlock appearance="subdued" size="small">
-                                                    {item.variant.variantTitle}
-                                                </TextBlock>
-                                                <TextBlock size="small">
-                                                    Price: {item.variant.price.amount} {item.variant.price.currencyCode}
-                                                </TextBlock>
-                                                <Banner status="info">New Item</Banner>
-                                            </BlockStack>
-                                            <TextBlock>Qty: {item.quantity}</TextBlock>
-                                            <Button onPress={() => handleVariantDelete(item.variant.variantId)}>
-                                                Remove
-                                            </Button>
-                                        </InlineStack>
-                                        <Divider/>
-                                    </BlockStack>
-                                ))}
-                            </BlockStack>
+                                    {/* New variants to add */}
+                                    {selectedVariants.map((item, index) => (
+                                        <BlockStack key={`new-${index}`} spacing="tight">
+                                            <Grid columns={['fill', 'auto', 'auto']} spacing="base">
+                                                <GridItem>
+                                                    <BlockStack spacing="extraTight">
+                                                        <TextBlock emphasis="bold">{item.variant.productTitle}</TextBlock>
+                                                        <TextBlock appearance="subdued" size="small">
+                                                            {item.variant.variantTitle}
+                                                        </TextBlock>
+                                                        <TextBlock size="small" appearance="subdued">
+                                                            {item.variant.price.amount} {item.variant.price.currencyCode}
+                                                        </TextBlock>
+                                                        <Banner status="success">New</Banner>
+                                                    </BlockStack>
+                                                </GridItem>
+                                                <GridItem>
+                                                    <TextBlock>Qty: {item.quantity}</TextBlock>
+                                                </GridItem>
+                                                <GridItem>
+                                                    <Button
+                                                        kind="plain"
+                                                        onPress={() => handleVariantDelete(item.variant.variantId)}
+                                                    >
+                                                        Remove
+                                                    </Button>
+                                                </GridItem>
+                                            </Grid>
+                                            <Divider/>
+                                        </BlockStack>
+                                    ))}
+                                </BlockStack>
 
-                            {/* Order Summary */}
-                            <BlockStack spacing="tight">
-                                <Divider/>
-                                {order?.current?.subtotal && (
-                                    <InlineStack spacing="between">
-                                        <TextBlock>Subtotal:</TextBlock>
-                                        <TextBlock>
-                                            {order.current.subtotal.amount} {order.current.subtotal.currencyCode}
-                                        </TextBlock>
-                                    </InlineStack>
-                                )}
-                                {order?.current?.totalTax && (
-                                    <InlineStack spacing="between">
-                                        <TextBlock>Tax:</TextBlock>
-                                        <TextBlock>
-                                            {order.current.totalTax.amount} {order.current.totalTax.currencyCode}
-                                        </TextBlock>
-                                    </InlineStack>
-                                )}
-                                {order?.current?.totalPrice && (
-                                    <InlineStack spacing="between">
-                                        <TextBlock size="large">Total:</TextBlock>
-                                        <TextBlock size="large">
-                                            {order.current.totalPrice.amount} {order.current.totalPrice.currencyCode}
-                                        </TextBlock>
-                                    </InlineStack>
-                                )}
+                                {/* Order Summary */}
+                                <BlockStack spacing="base" border="base" padding="base">
+                                    {order?.current?.subtotal && (
+                                        <InlineStack spacing="between">
+                                            <TextBlock>Subtotal</TextBlock>
+                                            <TextBlock>
+                                                {order.current.subtotal.amount} {order.current.subtotal.currencyCode}
+                                            </TextBlock>
+                                        </InlineStack>
+                                    )}
+                                    {order?.current?.totalTax && (
+                                        <InlineStack spacing={'base'}>
+                                            <TextBlock>Tax</TextBlock>
+                                            <TextBlock>
+                                                {order.current.totalTax.amount} {order.current.totalTax.currencyCode}
+                                            </TextBlock>
+                                        </InlineStack>
+                                    )}
+                                    <Divider/>
+                                    {order?.current?.totalPrice && (
+                                        <InlineStack spacing={'base'}>
+                                            <TextBlock emphasis="bold" size="large">Total</TextBlock>
+                                            <TextBlock emphasis="bold" size="large">
+                                                {order.current.totalPrice.amount} {order.current.totalPrice.currencyCode}
+                                            </TextBlock>
+                                        </InlineStack>
+                                    )}
+                                </BlockStack>
                             </BlockStack>
-                        </BlockStack>
                     </GridItem>
                 </Grid>
             </BlockStack>
-
         </Page>
     );
 }
