@@ -12,7 +12,7 @@ import {
     Banner,
     TextField,
     Modal,
-    Card
+    Card, Link, Badge
 } from "@shopify/ui-extensions-react/customer-account";
 import {useState} from "react";
 import {VariantWithProduct} from "../../../extensions/order-edit-button/src/types";
@@ -47,12 +47,23 @@ function OrderPage({api}) {
             setQuantities(initialQuantities);
         }
     }
+    const extractIdFromGid = (gid: string) => {
+        const parts = gid.split('/');
+        return parts[parts.length - 1];
+    };
 
     const handleQuantityChange = (lineItemId: string, newQuantity: string) => {
         const quantity = parseInt(newQuantity) || 0;
         setQuantities(prev => ({
             ...prev,
             [lineItemId]: Math.max(0, quantity)
+        }));
+    };
+
+    const handleRemoveItem = (lineItemId: string) => {
+        setQuantities(prev => ({
+            ...prev,
+            [lineItemId]: 0
         }));
     };
 
@@ -103,6 +114,12 @@ function OrderPage({api}) {
         quantities[item.id] !== item.quantity
     ) || selectedVariants.length > 0;
 
+    // Check if all quantities are 0 (order cancellation)
+    const allQuantitiesZero = lineItems.every((item: any) => {
+        const qty = item.id in quantities ? quantities[item.id] : item.quantity;
+        return qty === 0;
+    }) && selectedVariants.length === 0;
+
     // Calculate updated totals based on current quantities
     const calculateUpdatedTotals = () => {
         const currencyCode = cost?.subtotalAmount?.current?.currencyCode || 'BDT';
@@ -111,7 +128,8 @@ function OrderPage({api}) {
         let newSubtotal = 0;
         lineItems.forEach((item: any) => {
             const itemPrice = parseFloat(item.price?.amount || item.cost?.totalAmount?.amount || 0);
-            const itemQuantity = quantities[item.id] || item.quantity || 0;
+            // Use updated quantity if it exists in state, otherwise use original
+            const itemQuantity = item.id in quantities ? quantities[item.id] : item.quantity;
             newSubtotal += itemPrice * itemQuantity;
         });
 
@@ -143,28 +161,28 @@ function OrderPage({api}) {
         <Page
             subtitle="Edit order"
             title={`Order ${order.current.name}`}
+            secondaryAction={<Button
+                to={`shopify:customer-account/orders/${extractIdFromGid(order.current.id)}`}
+            >
+                {(allQuantitiesZero ? 'Cancel' : 'Update')}
+            </Button>}
             primaryAction={
                 hasChanges && <Button
                     onPress={handleSave}
-                    kind={hasChanges ? "primary" : "secondary"}
+                    kind={"secondary"}
                     loading={isSaving}
                     disabled={!hasChanges}
                 >
-                    {isSaving ? 'Updating...' : 'Update'}
+                    {(allQuantitiesZero ? 'Cancel' : 'Update')}
                 </Button>
             }
         >
-            {/*<BlockStack minBlockSize={hasChanges ? undefined : 0}>*/}
-            {/*    {hasChanges && (*/}
-            <Banner status={hasChanges ? 'warning' : 'info'}>
-                {hasChanges ? 'You have unsaved changes.' : 'You can update you until 12:12 pm'}
-            </Banner>
-            {/*)}*/}
-            {/*</BlockStack>*/}
+
 
             <BlockStack spacing={'base'}>
-                {/* Banner container - always present to prevent layout jump */}
-
+                <Banner status={hasChanges ? 'warning' : 'info'}>
+                    {hasChanges ? 'You have unsaved changes.' : 'You can update you until 12:12 pm'}
+                </Banner>
 
                 {/* Two Column Layout */}
                 <Grid columns={['fill', 'fill']} spacing={'base'}>
@@ -241,12 +259,9 @@ function OrderPage({api}) {
                                     <BlockStack spacing="base">
                                         {lineItems.map((item: any) => (
                                             <BlockStack key={item.id} spacing="tight">
-                                                <Grid columns={['fill', 'auto']} spacing="base">
+                                                <Grid columns={['fill', 'auto', 'auto']} spacing="base">
                                                     <GridItem>
                                                         <BlockStack spacing="extraTight">
-                                                            <TextBlock emphasis="bold">
-                                                                {item.merchandise?.product?.title || item.title}
-                                                            </TextBlock>
                                                             {item.merchandise?.title && (
                                                                 <TextBlock appearance="subdued" size="small">
                                                                     {item.merchandise.title}
@@ -265,8 +280,16 @@ function OrderPage({api}) {
                                                             onChange={(value) => handleQuantityChange(item.id, value)}
                                                         />
                                                     </GridItem>
+                                                    <GridItem>
+                                                        <Button
+                                                            kind="plain"
+                                                            onPress={() => handleRemoveItem(item.id)}
+
+                                                        >
+                                                            Remove
+                                                        </Button>
+                                                    </GridItem>
                                                 </Grid>
-                                                <Divider/>
                                             </BlockStack>
                                         ))}
 
@@ -276,14 +299,19 @@ function OrderPage({api}) {
                                                 <Grid columns={['fill', 'auto', 'auto']} spacing="base">
                                                     <GridItem>
                                                         <BlockStack spacing="extraTight">
-                                                            <TextBlock emphasis="bold">{item.variant.productTitle}</TextBlock>
+                                                            <InlineStack spacing={'base'} blockAlignment={'center'} inlineAlignment={'start'}>
+                                                                <TextBlock appearance="subdued" size="small">
+                                                                    {item.variant.productTitle}
+                                                                </TextBlock>
+                                                                <Badge size={'small'} tone={'default'}>New</Badge>
+                                                            </InlineStack>
                                                             <TextBlock appearance="subdued" size="small">
                                                                 {item.variant.variantTitle}
                                                             </TextBlock>
                                                             <TextBlock size="small" appearance="subdued">
                                                                 {item.variant.price.amount} {item.variant.price.currencyCode}
                                                             </TextBlock>
-                                                            <Banner status="success">New</Banner>
+
                                                         </BlockStack>
                                                     </GridItem>
                                                     <GridItem>
