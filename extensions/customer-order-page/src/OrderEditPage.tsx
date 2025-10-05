@@ -12,6 +12,7 @@ import {
     Banner,
     TextField,
     Modal,
+    Card
 } from "@shopify/ui-extensions-react/customer-account";
 import {useState} from "react";
 import {VariantWithProduct} from "../../../extensions/order-edit-button/src/types";
@@ -158,64 +159,69 @@ function OrderPage({api}) {
                     <GridItem>
                         <BlockStack spacing={'base'}>
                             {/* Billing Address */}
-                            <BlockStack spacing="base" border="base" padding="base">
-                                <Heading level={3}>Billing Address</Heading>
-                                <Divider/>
-                                {billingAddress?.current ? (
-                                    <BlockStack spacing="extraTight">
-                                        <TextBlock emphasis="bold">
-                                            {billingAddress.current.firstName} {billingAddress.current.lastName}
-                                        </TextBlock>
-                                        <TextBlock>{billingAddress.current.address1 || ''}</TextBlock>
-                                        {billingAddress.current.address2 && (
-                                            <TextBlock>{billingAddress.current.address2}</TextBlock>
-                                        )}
-                                        <TextBlock>
-                                            {billingAddress.current.city}, {billingAddress.current.provinceCode} {billingAddress.current.zip}
-                                        </TextBlock>
-                                        <TextBlock>{billingAddress.current.countryCode}</TextBlock>
-                                        {billingAddress.current.phone && (
-                                            <TextBlock appearance="subdued">{billingAddress.current.phone}</TextBlock>
-                                        )}
-                                    </BlockStack>
-                                ) : (
-                                    <TextBlock appearance="subdued">No billing address</TextBlock>
-                                )}
-                            </BlockStack>
+                            <Card padding={'100'}>
+                                <BlockStack spacing="base">
+                                    <Heading level={3}>Billing Address</Heading>
+                                    <Divider/>
+                                    {billingAddress?.current ? (
+                                        <BlockStack spacing="extraTight">
+                                            <TextBlock emphasis="bold">
+                                                {billingAddress.current.firstName} {billingAddress.current.lastName}
+                                            </TextBlock>
+                                            <TextBlock>{billingAddress.current.address1 || ''}</TextBlock>
+                                            {billingAddress.current.address2 && (
+                                                <TextBlock>{billingAddress.current.address2}</TextBlock>
+                                            )}
+                                            <TextBlock>
+                                                {billingAddress.current.city}, {billingAddress.current.provinceCode} {billingAddress.current.zip}
+                                            </TextBlock>
+                                            <TextBlock>{billingAddress.current.countryCode}</TextBlock>
+                                            {billingAddress.current.phone && (
+                                                <TextBlock appearance="subdued">{billingAddress.current.phone}</TextBlock>
+                                            )}
+                                        </BlockStack>
+                                    ) : (
+                                        <TextBlock appearance="subdued">No billing address</TextBlock>
+                                    )}
+                                </BlockStack>
+                            </Card>
 
                             {/* Shipping Address */}
-                            <BlockStack spacing="base" border="base" padding="base">
-                                <Heading level={3}>Shipping Address</Heading>
-                                <Divider/>
-                                {shippingAddress?.current ? (
-                                    <BlockStack spacing="extraTight">
-                                        <TextBlock emphasis="bold">
-                                            {shippingAddress.current.firstName} {shippingAddress.current.lastName}
-                                        </TextBlock>
-                                        <TextBlock>{shippingAddress.current.address1 || ''}</TextBlock>
-                                        {shippingAddress.current.address2 && (
-                                            <TextBlock>{shippingAddress.current.address2}</TextBlock>
-                                        )}
-                                        <TextBlock>
-                                            {shippingAddress.current.city}, {shippingAddress.current.provinceCode} {shippingAddress.current.zip}
-                                        </TextBlock>
-                                        <TextBlock>{shippingAddress.current.countryCode}</TextBlock>
-                                        {shippingAddress.current.phone && (
-                                            <TextBlock appearance="subdued">{shippingAddress.current.phone}</TextBlock>
-                                        )}
-                                    </BlockStack>
-                                ) : (
-                                    <TextBlock appearance="subdued">No shipping address</TextBlock>
-                                )}
-                            </BlockStack>
+                            <Card padding={'100'}>
+                                <BlockStack spacing="base">
+                                    <Heading level={3}>Shipping Address</Heading>
+                                    <Divider/>
+                                    {shippingAddress?.current ? (
+                                        <BlockStack spacing="extraTight">
+                                            <TextBlock emphasis="bold">
+                                                {shippingAddress.current.firstName} {shippingAddress.current.lastName}
+                                            </TextBlock>
+                                            <TextBlock>{shippingAddress.current.address1 || ''}</TextBlock>
+                                            {shippingAddress.current.address2 && (
+                                                <TextBlock>{shippingAddress.current.address2}</TextBlock>
+                                            )}
+                                            <TextBlock>
+                                                {shippingAddress.current.city}, {shippingAddress.current.provinceCode} {shippingAddress.current.zip}
+                                            </TextBlock>
+                                            <TextBlock>{shippingAddress.current.countryCode}</TextBlock>
+                                            {shippingAddress.current.phone && (
+                                                <TextBlock appearance="subdued">{shippingAddress.current.phone}</TextBlock>
+                                            )}
+                                        </BlockStack>
+                                    ) : (
+                                        <TextBlock appearance="subdued">No shipping address</TextBlock>
+                                    )}
+                                </BlockStack>
+                            </Card>
                         </BlockStack>
                     </GridItem>
 
                     {/* Right Column - Line Items */}
                     <GridItem>
-                        <BlockStack spacing={'extraTight'} border="base" padding="base">
-                            <Heading level={3}>Order Items</Heading>
-                            <Divider/>
+                        <Card padding={'100'}>
+                            <BlockStack spacing="base">
+                                <Heading level={3}>Order Items</Heading>
+                                <Divider/>
 
                                 {/* Line Items List */}
                                 <BlockStack spacing="base">
@@ -312,6 +318,7 @@ function OrderPage({api}) {
                                     )}
                                 </BlockStack>
                             </BlockStack>
+                        </Card>
                     </GridItem>
                 </Grid>
             </BlockStack>
