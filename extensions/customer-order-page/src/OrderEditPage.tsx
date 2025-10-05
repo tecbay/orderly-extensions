@@ -12,7 +12,10 @@ import {
     Banner,
     TextField,
     Modal,
-    Card, Link, Badge
+    Card,
+    Link,
+    Badge,
+    Icon, ScrollView
 } from "@shopify/ui-extensions-react/customer-account";
 import {useState} from "react";
 import {VariantWithProduct} from "../../../extensions/order-edit-button/src/types";
@@ -82,6 +85,15 @@ function OrderPage({api}) {
 
     const handleVariantDelete = (variantId: string) => {
         setSelectedVariants(prev => prev.filter(item => item.variant.variantId !== variantId));
+    };
+
+    const handleNewVariantQuantityChange = (variantId: string, newQuantity: string) => {
+        const quantity = Math.max(0, parseInt(newQuantity) || 0);
+        setSelectedVariants(prev => prev.map(item =>
+            item.variant.variantId === variantId
+                ? { ...item, quantity }
+                : item
+        ));
     };
 
     // @ts-ignore
@@ -284,9 +296,9 @@ function OrderPage({api}) {
                                                         <Button
                                                             kind="plain"
                                                             onPress={() => handleRemoveItem(item.id)}
-
+                                                            accessibilityLabel="Remove item"
                                                         >
-                                                            Remove
+                                                            <Icon source="delete" />
                                                         </Button>
                                                     </GridItem>
                                                 </Grid>
@@ -303,7 +315,7 @@ function OrderPage({api}) {
                                                                 <TextBlock appearance="subdued" size="small">
                                                                     {item.variant.productTitle}
                                                                 </TextBlock>
-                                                                <Badge size={'small'} tone={'default'}>New</Badge>
+                                                                <Badge size={'small'} tone={'success'}>New</Badge>
                                                             </InlineStack>
                                                             <TextBlock appearance="subdued" size="small">
                                                                 {item.variant.variantTitle}
@@ -311,18 +323,23 @@ function OrderPage({api}) {
                                                             <TextBlock size="small" appearance="subdued">
                                                                 {item.variant.price.amount} {item.variant.price.currencyCode}
                                                             </TextBlock>
-
                                                         </BlockStack>
                                                     </GridItem>
                                                     <GridItem>
-                                                        <TextBlock>Qty: {item.quantity}</TextBlock>
+                                                        <TextField
+                                                            label="Qty"
+                                                            type="number"
+                                                            value={item.quantity.toString()}
+                                                            onChange={(value) => handleNewVariantQuantityChange(item.variant.variantId, value)}
+                                                        />
                                                     </GridItem>
                                                     <GridItem>
                                                         <Button
                                                             kind="plain"
                                                             onPress={() => handleVariantDelete(item.variant.variantId)}
+                                                            accessibilityLabel="Remove item"
                                                         >
-                                                            Remove
+                                                            <Icon source="delete" />
                                                         </Button>
                                                     </GridItem>
                                                 </Grid>
@@ -333,27 +350,30 @@ function OrderPage({api}) {
 
                                     {/* Add Items Button */}
                                     <Button
+                                        kind={'primary'}
+                                        appearance={'monochrome'}
                                         overlay={
                                             <Modal
                                                 id="add-product-modal"
-                                                padding={false}
                                                 title="Add Items"
+                                                padding={true}
                                                 primaryAction={
                                                     <Button kind="primary">
                                                         Done ({selectedVariants.length})
                                                     </Button>
                                                 }
                                             >
-                                                <BlockStack spacing="none">
-                                                    <BlockStack spacing="base" padding="base" border="base">
-                                                        <ProductSearchModal
-                                                            onVariantSelect={handleVariantSelect}
-                                                            onVariantDelete={handleVariantDelete}
-                                                            selectedVariants={selectedVariants}
-                                                            onClose={() => setShowProductSearch(false)}
-                                                        />
-                                                    </BlockStack>
-                                                </BlockStack>
+                                                <ScrollView >
+                                                    <ProductSearchModal
+                                                        onVariantSelect={handleVariantSelect}
+                                                        onVariantDelete={handleVariantDelete}
+                                                        selectedVariants={selectedVariants}
+                                                        onClose={() => setShowProductSearch(false)}
+                                                    />
+                                                </ScrollView>
+
+
+
                                             </Modal>
                                         }
                                     >
