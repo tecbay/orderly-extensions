@@ -3,24 +3,22 @@ import {
     Page,
     BlockStack,
     TextBlock,
-    useApi,
     useOrder,
-    useNavigation,
 
 } from "@shopify/ui-extensions-react/customer-account";
 
 export default reactExtension("customer-account.order.page.render",
-    (api) => <OrderPage api={api}/>);
+    (api) => <OrderPage />);
 
-function OrderPage({api}) {
-    console.log('shopify.extension', shopify.extension)
-
+function OrderPage() {
     const order = useOrder();
-    const navigate = useNavigation();
-    const {query} = useApi();
 
     if (!order) {
-        return <TextBlock>Loading order...</TextBlock>;
+        return (
+            <Page title="Loading...">
+                <TextBlock>Loading order...</TextBlock>
+            </Page>
+        );
     }
 
     console.log("Order data:", order);

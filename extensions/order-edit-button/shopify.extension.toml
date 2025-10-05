@@ -19,6 +19,10 @@ uid = "9e012236-56a0-6118-c5dc-c85333a63bbed44a7ac5"
 module = "./src/OrderEditActionButton.tsx"
 target = "customer-account.order.action.menu-item.render"
 
+[[extensions.targeting]]
+module = "./src/OrderEditModal.tsx"
+target = "customer-account.order.action.render"
+
 
 
 [extensions.capabilities]

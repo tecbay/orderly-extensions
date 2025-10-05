@@ -9,8 +9,13 @@ const TARGET = 'customer-account.order.action.menu-item.render';
 export default reactExtension(TARGET, (api) => <OrderEditActionButton orderId={api.orderId}/>);
 
 function OrderEditActionButton({orderId}: { orderId: string }) {
-    const {sessionToken, query, navigation} = useApi<"customer-account.order.action.menu-item.render">();
+    const {sessionToken, query, navigation,extension} = useApi<"customer-account.order.action.menu-item.render">();
 
+    // Extract numeric ID from GID
+    const extractIdFromGid = (gid: string) => {
+        const parts = gid.split('/');
+        return parts[parts.length - 1];
+    };
 
     useEffect(() => {
         // @ts-ignore
@@ -99,7 +104,6 @@ function OrderEditActionButton({orderId}: { orderId: string }) {
 
     const {  } = useApi();
 
-    return <Button onPress={() => {
-        navigation.navigate('extension:order-full-page-edit/')
-    }}>Edit</Button>;
+    // return <Button>Edit</Button>;
+    return <Button to={`extension:order-full-page-edit/customer-account.order.page.render/${extractIdFromGid(orderId)}`}>Edit Order</Button>;
 }
