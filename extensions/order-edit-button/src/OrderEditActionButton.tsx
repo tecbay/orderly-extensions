@@ -1,22 +1,15 @@
 import {
     Button,
     reactExtension,
-    useApi,
+    useApi
 } from "@shopify/ui-extensions-react/customer-account";
 import {useEffect} from "react";
 
-export default reactExtension(
-    "customer-account.order.action.menu-item.render", (api) => {
-
-
-        // const {getSessionToken} = useSessionToken();
-        // console.log(getSessionToken)
-        return <OrderEditActionButton orderId={api.orderId}/>;
-    }
-);
+const TARGET = 'customer-account.order.action.menu-item.render';
+export default reactExtension(TARGET, (api) => <OrderEditActionButton orderId={api.orderId}/>);
 
 function OrderEditActionButton({orderId}: { orderId: string }) {
-    const {navigation, sessionToken,query} = useApi<"customer-account.order.action.menu-item.render">();
+    const {sessionToken, query, navigation} = useApi<"customer-account.order.action.menu-item.render">();
 
 
     useEffect(() => {
@@ -86,7 +79,7 @@ function OrderEditActionButton({orderId}: { orderId: string }) {
                     }
                 );
 
-                console.log(result.data,'result.data')
+                console.log(result.data, 'result.data')
             } catch (err) {
                 console.error('Error fetching products:', err);
             } finally {
@@ -104,6 +97,9 @@ function OrderEditActionButton({orderId}: { orderId: string }) {
         console.log('OrderEditActionButton orderId:', orderId);
     }, [orderId]);
 
-    // For modal to work, the button should NOT have onPress - Shopify automatically opens the modal
-    return <Button>Edit</Button>;
+    const {  } = useApi();
+
+    return <Button onPress={() => {
+        navigation.navigate('extension:order-full-page-edit/')
+    }}>Edit</Button>;
 }

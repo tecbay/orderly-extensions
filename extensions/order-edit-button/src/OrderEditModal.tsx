@@ -7,7 +7,8 @@ import {
     BlockStack,
     TextBlock,
     Banner,
-    Spinner
+    Spinner,
+    useNavigation
 } from "@shopify/ui-extensions-react/customer-account";
 import {useState} from "react";
 import {OrderData, VariantWithProduct} from "./types";
@@ -22,7 +23,7 @@ export default reactExtension(
 
 
 function OrderEditModal({orderId}: { orderId: string }) {
-    const {navigation} = useApi()
+    const {navigate} = useNavigation()
 
     // Extract numeric ID from GID for URL
     const extractIdFromGid = (gid: string) => {
@@ -31,12 +32,13 @@ function OrderEditModal({orderId}: { orderId: string }) {
     };
 
     const numericOrderId = extractIdFromGid(orderId);
-    const extensionUrl = `extension:$order-full-page-edit/order/${numericOrderId}`;
+    // Using customer-account.page.render (non-order-specific) so we can navigate to it
+    // We'll pass the orderId as a query parameter
+    const extensionUrl = `extension:order-full-page-edit/`;
 
     function gotoOrder() {
         console.log("Navigating to:", extensionUrl);
-        console.log("Order ID:", orderId, "Numeric:", numericOrderId);
-        navigation.navigate(extensionUrl);
+        navigate(extensionUrl);
     }
 
     return (
@@ -52,6 +54,7 @@ function OrderEditModal({orderId}: { orderId: string }) {
                 <TextBlock>
                     You are about to edit order. Click "Proceed to Edit" to continue to the full editing page.
                 </TextBlock>
+                <Button to={extensionUrl}>Aasdf</Button>
             </BlockStack>
         </CustomerAccountAction>
     );

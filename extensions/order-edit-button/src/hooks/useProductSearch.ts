@@ -6,6 +6,7 @@ export function useProductSearch(initialFetch = true) {
     const [variants, setVariants] = useState<VariantWithProduct[]>([]);
     const [isSearching, setIsSearching] = useState(false);
     const [searchError, setSearchError] = useState<string | null>(null);
+    // @ts-ignore
     const debounceTimer = useRef<NodeJS.Timeout | null>(null);
 
     // Fetch initial products on mount
@@ -15,6 +16,7 @@ export function useProductSearch(initialFetch = true) {
         }
     }, [initialFetch]);
 
+    // @ts-ignore
     async function searchProducts(query: string) {
         console.log('Searching for products with query:', query || '(all products)');
 
