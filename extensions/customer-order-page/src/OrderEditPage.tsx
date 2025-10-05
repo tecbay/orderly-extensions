@@ -22,11 +22,12 @@ export default reactExtension("customer-account.order.page.render",
     (api) => <OrderPage api={api}/>);
 
 function OrderPage({api}) {
-    const {order, lines, billingAddress, shippingAddress, buyerIdentity} = api;
+    const {order, lines, billingAddress, shippingAddress, buyerIdentity, cost} = api;
     console.log('order', order);
     console.log('lines', lines);
     console.log('billingAddress', billingAddress);
     console.log('shippingAddress', shippingAddress);
+    console.log('cost', cost);
 
     const [showProductSearch, setShowProductSearch] = useState(false);
     const [selectedVariants, setSelectedVariants] = useState<Array<{ variant: VariantWithProduct; quantity: number }>>([]);
@@ -102,12 +103,48 @@ function OrderPage({api}) {
         quantities[item.id] !== item.quantity
     ) || selectedVariants.length > 0;
 
+    // Calculate updated totals based on current quantities
+    const calculateUpdatedTotals = () => {
+        const currencyCode = cost?.subtotalAmount?.current?.currencyCode || 'BDT';
+
+        // Calculate subtotal from existing items with updated quantities
+        let newSubtotal = 0;
+        lineItems.forEach((item: any) => {
+            const itemPrice = parseFloat(item.price?.amount || item.cost?.totalAmount?.amount || 0);
+            const itemQuantity = quantities[item.id] || item.quantity || 0;
+            newSubtotal += itemPrice * itemQuantity;
+        });
+
+        // Add new variants to subtotal
+        selectedVariants.forEach((item) => {
+            const variantPrice = parseFloat(item.variant.price.amount || 0);
+            newSubtotal += variantPrice * item.quantity;
+        });
+
+        // Calculate tax proportionally based on original tax rate
+        const originalSubtotal = parseFloat(cost?.subtotalAmount?.current?.amount || 0);
+        const originalTax = parseFloat(cost?.totalTaxAmount?.current?.amount || 0);
+        const taxRate = originalSubtotal > 0 ? originalTax / originalSubtotal : 0;
+        const newTax = newSubtotal * taxRate;
+
+        // Calculate total
+        const newTotal = newSubtotal + newTax;
+
+        return {
+            subtotal: { amount: newSubtotal.toFixed(2), currencyCode },
+            tax: { amount: newTax.toFixed(2), currencyCode },
+            total: { amount: newTotal.toFixed(2), currencyCode }
+        };
+    };
+
+    const updatedTotals = calculateUpdatedTotals();
+
     return (
         <Page
             subtitle="Edit order"
             title={`Order ${order.current.name}`}
             primaryAction={
-                <Button
+                hasChanges && <Button
                     onPress={handleSave}
                     kind={hasChanges ? "primary" : "secondary"}
                     loading={isSaving}
@@ -119,7 +156,7 @@ function OrderPage({api}) {
         >
             <BlockStack spacing={'base'}>
                 {hasChanges && (
-                    <Banner status="info">
+                    <Banner status={'warning'}>
                         You have unsaved changes.
                     </Banner>
                 )}
@@ -189,6 +226,7 @@ function OrderPage({api}) {
 
                     {/* Right Column - Line Items */}
                     <GridItem>
+                        <BlockStack spacing={'base'}>
                         <Card padding={'100'}>
                             <BlockStack spacing="base">
                                 <Heading level={3}>Order Items</Heading>
@@ -288,39 +326,50 @@ function OrderPage({api}) {
                                 >
                                     Add items
                                 </Button>
-
-                                <Divider/>
-
-                                {/* Order Summary */}
-                                <BlockStack spacing="base" border="base" padding="base">
-                                    {order?.current?.subtotal && (
-                                        <InlineStack spacing="between">
-                                            <TextBlock>Subtotal</TextBlock>
-                                            <TextBlock>
-                                                {order.current.subtotal.amount} {order.current.subtotal.currencyCode}
-                                            </TextBlock>
-                                        </InlineStack>
-                                    )}
-                                    {order?.current?.totalTax && (
-                                        <InlineStack spacing={'base'}>
-                                            <TextBlock>Tax</TextBlock>
-                                            <TextBlock>
-                                                {order.current.totalTax.amount} {order.current.totalTax.currencyCode}
-                                            </TextBlock>
-                                        </InlineStack>
-                                    )}
-                                    <Divider/>
-                                    {order?.current?.totalPrice && (
-                                        <InlineStack spacing={'base'}>
-                                            <TextBlock emphasis="bold" size="large">Total</TextBlock>
-                                            <TextBlock emphasis="bold" size="large">
-                                                {order.current.totalPrice.amount} {order.current.totalPrice.currencyCode}
-                                            </TextBlock>
-                                        </InlineStack>
-                                    )}
-                                </BlockStack>
                             </BlockStack>
                         </Card>
+
+                        {/* Order Summary */}
+                        <Card padding={'100'}>
+                            <BlockStack spacing="base">
+                                <Heading level={3}>Order Summary</Heading>
+                                <Divider/>
+                                <BlockStack spacing="tight">
+                                    <Grid columns={['fill', 'auto']} spacing="base">
+                                        <GridItem>
+                                            <TextBlock>Subtotal</TextBlock>
+                                        </GridItem>
+                                        <GridItem>
+                                            <TextBlock>
+                                                {updatedTotals.subtotal.amount} {updatedTotals.subtotal.currencyCode}
+                                            </TextBlock>
+                                        </GridItem>
+                                    </Grid>
+                                    <Grid columns={['fill', 'auto']} spacing="base">
+                                        <GridItem>
+                                            <TextBlock>Tax</TextBlock>
+                                        </GridItem>
+                                        <GridItem>
+                                            <TextBlock>
+                                                {updatedTotals.tax.amount} {updatedTotals.tax.currencyCode}
+                                            </TextBlock>
+                                        </GridItem>
+                                    </Grid>
+                                </BlockStack>
+                                <Divider/>
+                                <Grid columns={['fill', 'auto']} spacing="base">
+                                    <GridItem>
+                                        <TextBlock emphasis="bold" size="large">Total</TextBlock>
+                                    </GridItem>
+                                    <GridItem>
+                                        <TextBlock emphasis="bold" size="large">
+                                            {updatedTotals.total.amount} {updatedTotals.total.currencyCode}
+                                        </TextBlock>
+                                    </GridItem>
+                                </Grid>
+                            </BlockStack>
+                        </Card>
+                        </BlockStack>
                     </GridItem>
                 </Grid>
             </BlockStack>
