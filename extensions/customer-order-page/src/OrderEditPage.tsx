@@ -131,9 +131,9 @@ function OrderPage({api}) {
         const newTotal = newSubtotal + newTax;
 
         return {
-            subtotal: { amount: newSubtotal.toFixed(2), currencyCode },
-            tax: { amount: newTax.toFixed(2), currencyCode },
-            total: { amount: newTotal.toFixed(2), currencyCode }
+            subtotal: {amount: newSubtotal.toFixed(2), currencyCode},
+            tax: {amount: newTax.toFixed(2), currencyCode},
+            total: {amount: newTotal.toFixed(2), currencyCode}
         };
     };
 
@@ -150,16 +150,21 @@ function OrderPage({api}) {
                     loading={isSaving}
                     disabled={!hasChanges}
                 >
-                    {isSaving ? 'Saving...' : 'Save Changes'}
+                    {isSaving ? 'Updating...' : 'Update'}
                 </Button>
             }
         >
+            {/*<BlockStack minBlockSize={hasChanges ? undefined : 0}>*/}
+            {/*    {hasChanges && (*/}
+            <Banner status={hasChanges ? 'warning' : 'info'}>
+                {hasChanges ? 'You have unsaved changes.' : 'You can update you until 12:12 pm'}
+            </Banner>
+            {/*)}*/}
+            {/*</BlockStack>*/}
+
             <BlockStack spacing={'base'}>
-                {hasChanges && (
-                    <Banner status={'warning'}>
-                        You have unsaved changes.
-                    </Banner>
-                )}
+                {/* Banner container - always present to prevent layout jump */}
+
 
                 {/* Two Column Layout */}
                 <Grid columns={['fill', 'fill']} spacing={'base'}>
@@ -227,148 +232,148 @@ function OrderPage({api}) {
                     {/* Right Column - Line Items */}
                     <GridItem>
                         <BlockStack spacing={'base'}>
-                        <Card padding={'100'}>
-                            <BlockStack spacing="base">
-                                <Heading level={3}>Order Items</Heading>
-                                <Divider/>
-
-                                {/* Line Items List */}
+                            <Card padding={'100'}>
                                 <BlockStack spacing="base">
-                                    {lineItems.map((item: any) => (
-                                        <BlockStack key={item.id} spacing="tight">
-                                            <Grid columns={['fill', 'auto']} spacing="base">
-                                                <GridItem>
-                                                    <BlockStack spacing="extraTight">
-                                                        <TextBlock emphasis="bold">
-                                                            {item.merchandise?.product?.title || item.title}
-                                                        </TextBlock>
-                                                        {item.merchandise?.title && (
-                                                            <TextBlock appearance="subdued" size="small">
-                                                                {item.merchandise.title}
+                                    <Heading level={3}>Order Items</Heading>
+                                    <Divider/>
+
+                                    {/* Line Items List */}
+                                    <BlockStack spacing="base">
+                                        {lineItems.map((item: any) => (
+                                            <BlockStack key={item.id} spacing="tight">
+                                                <Grid columns={['fill', 'auto']} spacing="base">
+                                                    <GridItem>
+                                                        <BlockStack spacing="extraTight">
+                                                            <TextBlock emphasis="bold">
+                                                                {item.merchandise?.product?.title || item.title}
                                                             </TextBlock>
-                                                        )}
-                                                        <TextBlock size="small" appearance="subdued">
-                                                            {item.price?.amount || item.cost?.totalAmount?.amount} {item.price?.currencyCode || item.cost?.totalAmount?.currencyCode}
-                                                        </TextBlock>
-                                                    </BlockStack>
-                                                </GridItem>
-                                                <GridItem>
-                                                    <TextField
-                                                        label="Qty"
-                                                        type="number"
-                                                        value={quantities[item.id]?.toString() || item.quantity?.toString() || '0'}
-                                                        onChange={(value) => handleQuantityChange(item.id, value)}
-                                                    />
-                                                </GridItem>
-                                            </Grid>
-                                            <Divider/>
-                                        </BlockStack>
-                                    ))}
-
-                                    {/* New variants to add */}
-                                    {selectedVariants.map((item, index) => (
-                                        <BlockStack key={`new-${index}`} spacing="tight">
-                                            <Grid columns={['fill', 'auto', 'auto']} spacing="base">
-                                                <GridItem>
-                                                    <BlockStack spacing="extraTight">
-                                                        <TextBlock emphasis="bold">{item.variant.productTitle}</TextBlock>
-                                                        <TextBlock appearance="subdued" size="small">
-                                                            {item.variant.variantTitle}
-                                                        </TextBlock>
-                                                        <TextBlock size="small" appearance="subdued">
-                                                            {item.variant.price.amount} {item.variant.price.currencyCode}
-                                                        </TextBlock>
-                                                        <Banner status="success">New</Banner>
-                                                    </BlockStack>
-                                                </GridItem>
-                                                <GridItem>
-                                                    <TextBlock>Qty: {item.quantity}</TextBlock>
-                                                </GridItem>
-                                                <GridItem>
-                                                    <Button
-                                                        kind="plain"
-                                                        onPress={() => handleVariantDelete(item.variant.variantId)}
-                                                    >
-                                                        Remove
-                                                    </Button>
-                                                </GridItem>
-                                            </Grid>
-                                            <Divider/>
-                                        </BlockStack>
-                                    ))}
-                                </BlockStack>
-
-                                {/* Add Items Button */}
-                                <Button
-                                    overlay={
-                                        <Modal
-                                            id="add-product-modal"
-                                            padding={false}
-                                            title="Add Items"
-                                            primaryAction={
-                                                <Button kind="primary">
-                                                    Done ({selectedVariants.length})
-                                                </Button>
-                                            }
-                                        >
-                                            <BlockStack spacing="none">
-                                                <BlockStack spacing="base" padding="base" border="base">
-                                                    <ProductSearchModal
-                                                        onVariantSelect={handleVariantSelect}
-                                                        onVariantDelete={handleVariantDelete}
-                                                        selectedVariants={selectedVariants}
-                                                        onClose={() => setShowProductSearch(false)}
-                                                    />
-                                                </BlockStack>
+                                                            {item.merchandise?.title && (
+                                                                <TextBlock appearance="subdued" size="small">
+                                                                    {item.merchandise.title}
+                                                                </TextBlock>
+                                                            )}
+                                                            <TextBlock size="small" appearance="subdued">
+                                                                {item.price?.amount || item.cost?.totalAmount?.amount} {item.price?.currencyCode || item.cost?.totalAmount?.currencyCode}
+                                                            </TextBlock>
+                                                        </BlockStack>
+                                                    </GridItem>
+                                                    <GridItem>
+                                                        <TextField
+                                                            label="Qty"
+                                                            type="number"
+                                                            value={quantities[item.id]?.toString() || item.quantity?.toString() || '0'}
+                                                            onChange={(value) => handleQuantityChange(item.id, value)}
+                                                        />
+                                                    </GridItem>
+                                                </Grid>
+                                                <Divider/>
                                             </BlockStack>
-                                        </Modal>
-                                    }
-                                >
-                                    Add items
-                                </Button>
-                            </BlockStack>
-                        </Card>
+                                        ))}
 
-                        {/* Order Summary */}
-                        <Card padding={'100'}>
-                            <BlockStack spacing="base">
-                                <Heading level={3}>Order Summary</Heading>
-                                <Divider/>
-                                <BlockStack spacing="tight">
+                                        {/* New variants to add */}
+                                        {selectedVariants.map((item, index) => (
+                                            <BlockStack key={`new-${index}`} spacing="tight">
+                                                <Grid columns={['fill', 'auto', 'auto']} spacing="base">
+                                                    <GridItem>
+                                                        <BlockStack spacing="extraTight">
+                                                            <TextBlock emphasis="bold">{item.variant.productTitle}</TextBlock>
+                                                            <TextBlock appearance="subdued" size="small">
+                                                                {item.variant.variantTitle}
+                                                            </TextBlock>
+                                                            <TextBlock size="small" appearance="subdued">
+                                                                {item.variant.price.amount} {item.variant.price.currencyCode}
+                                                            </TextBlock>
+                                                            <Banner status="success">New</Banner>
+                                                        </BlockStack>
+                                                    </GridItem>
+                                                    <GridItem>
+                                                        <TextBlock>Qty: {item.quantity}</TextBlock>
+                                                    </GridItem>
+                                                    <GridItem>
+                                                        <Button
+                                                            kind="plain"
+                                                            onPress={() => handleVariantDelete(item.variant.variantId)}
+                                                        >
+                                                            Remove
+                                                        </Button>
+                                                    </GridItem>
+                                                </Grid>
+                                                <Divider/>
+                                            </BlockStack>
+                                        ))}
+                                    </BlockStack>
+
+                                    {/* Add Items Button */}
+                                    <Button
+                                        overlay={
+                                            <Modal
+                                                id="add-product-modal"
+                                                padding={false}
+                                                title="Add Items"
+                                                primaryAction={
+                                                    <Button kind="primary">
+                                                        Done ({selectedVariants.length})
+                                                    </Button>
+                                                }
+                                            >
+                                                <BlockStack spacing="none">
+                                                    <BlockStack spacing="base" padding="base" border="base">
+                                                        <ProductSearchModal
+                                                            onVariantSelect={handleVariantSelect}
+                                                            onVariantDelete={handleVariantDelete}
+                                                            selectedVariants={selectedVariants}
+                                                            onClose={() => setShowProductSearch(false)}
+                                                        />
+                                                    </BlockStack>
+                                                </BlockStack>
+                                            </Modal>
+                                        }
+                                    >
+                                        Add items
+                                    </Button>
+                                </BlockStack>
+                            </Card>
+
+                            {/* Order Summary */}
+                            <Card padding={'100'}>
+                                <BlockStack spacing="base">
+                                    <Heading level={3}>Order Summary</Heading>
+                                    <Divider/>
+                                    <BlockStack spacing="tight">
+                                        <Grid columns={['fill', 'auto']} spacing="base">
+                                            <GridItem>
+                                                <TextBlock>Subtotal</TextBlock>
+                                            </GridItem>
+                                            <GridItem>
+                                                <TextBlock>
+                                                    {updatedTotals.subtotal.amount} {updatedTotals.subtotal.currencyCode}
+                                                </TextBlock>
+                                            </GridItem>
+                                        </Grid>
+                                        <Grid columns={['fill', 'auto']} spacing="base">
+                                            <GridItem>
+                                                <TextBlock>Tax</TextBlock>
+                                            </GridItem>
+                                            <GridItem>
+                                                <TextBlock>
+                                                    {updatedTotals.tax.amount} {updatedTotals.tax.currencyCode}
+                                                </TextBlock>
+                                            </GridItem>
+                                        </Grid>
+                                    </BlockStack>
+                                    <Divider/>
                                     <Grid columns={['fill', 'auto']} spacing="base">
                                         <GridItem>
-                                            <TextBlock>Subtotal</TextBlock>
+                                            <TextBlock emphasis="bold" size="large">Total</TextBlock>
                                         </GridItem>
                                         <GridItem>
-                                            <TextBlock>
-                                                {updatedTotals.subtotal.amount} {updatedTotals.subtotal.currencyCode}
-                                            </TextBlock>
-                                        </GridItem>
-                                    </Grid>
-                                    <Grid columns={['fill', 'auto']} spacing="base">
-                                        <GridItem>
-                                            <TextBlock>Tax</TextBlock>
-                                        </GridItem>
-                                        <GridItem>
-                                            <TextBlock>
-                                                {updatedTotals.tax.amount} {updatedTotals.tax.currencyCode}
+                                            <TextBlock emphasis="bold" size="large">
+                                                {updatedTotals.total.amount} {updatedTotals.total.currencyCode}
                                             </TextBlock>
                                         </GridItem>
                                     </Grid>
                                 </BlockStack>
-                                <Divider/>
-                                <Grid columns={['fill', 'auto']} spacing="base">
-                                    <GridItem>
-                                        <TextBlock emphasis="bold" size="large">Total</TextBlock>
-                                    </GridItem>
-                                    <GridItem>
-                                        <TextBlock emphasis="bold" size="large">
-                                            {updatedTotals.total.amount} {updatedTotals.total.currencyCode}
-                                        </TextBlock>
-                                    </GridItem>
-                                </Grid>
-                            </BlockStack>
-                        </Card>
+                            </Card>
                         </BlockStack>
                     </GridItem>
                 </Grid>
