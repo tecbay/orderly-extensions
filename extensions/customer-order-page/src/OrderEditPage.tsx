@@ -108,35 +108,6 @@ function OrderPage({api}) {
             title={`Order ${order.current.name}`}
             primaryAction={
                 <Button
-                    overlay={
-                        <Modal
-                            id="add-product-modal"
-                            padding={false}
-                            title="Add Items"
-                            primaryAction={
-                                <Button kind="primary">
-                                    Done ({selectedVariants.length})
-                                </Button>
-                            }
-                        >
-                            <BlockStack spacing="none">
-                                <BlockStack spacing="base" padding="base" border="base">
-                                    <ProductSearchModal
-                                        onVariantSelect={handleVariantSelect}
-                                        onVariantDelete={handleVariantDelete}
-                                        selectedVariants={selectedVariants}
-                                        onClose={() => setShowProductSearch(false)}
-                                    />
-                                </BlockStack>
-                            </BlockStack>
-                        </Modal>
-                    }
-                >
-                    Add items
-                </Button>
-            }
-            secondaryAction={
-                <Button
                     onPress={handleSave}
                     kind={hasChanges ? "primary" : "secondary"}
                     loading={isSaving}
@@ -288,6 +259,37 @@ function OrderPage({api}) {
                                         </BlockStack>
                                     ))}
                                 </BlockStack>
+
+                                {/* Add Items Button */}
+                                <Button
+                                    overlay={
+                                        <Modal
+                                            id="add-product-modal"
+                                            padding={false}
+                                            title="Add Items"
+                                            primaryAction={
+                                                <Button kind="primary">
+                                                    Done ({selectedVariants.length})
+                                                </Button>
+                                            }
+                                        >
+                                            <BlockStack spacing="none">
+                                                <BlockStack spacing="base" padding="base" border="base">
+                                                    <ProductSearchModal
+                                                        onVariantSelect={handleVariantSelect}
+                                                        onVariantDelete={handleVariantDelete}
+                                                        selectedVariants={selectedVariants}
+                                                        onClose={() => setShowProductSearch(false)}
+                                                    />
+                                                </BlockStack>
+                                            </BlockStack>
+                                        </Modal>
+                                    }
+                                >
+                                    Add items
+                                </Button>
+
+                                <Divider/>
 
                                 {/* Order Summary */}
                                 <BlockStack spacing="base" border="base" padding="base">
