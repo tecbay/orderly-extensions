@@ -24,6 +24,31 @@ import {ProductSearchModal} from "../../../extensions/order-edit-button/src/comp
 export default reactExtension("customer-account.order.page.render",
     (api) => <OrderPage api={api}/>);
 
+function PrimaryActionButton({hasChanges, allQuantitiesZero, isSaving, handleSave}: {
+    hasChanges: boolean;
+    allQuantitiesZero: boolean;
+    isSaving: boolean;
+    handleSave: () => void;
+}) {
+    if (!hasChanges) return null;
+
+    return (
+        <>
+            <Button appearance={'critical'} kind={'plain'}>
+                Discard
+            </Button>
+            <Button
+                onPress={handleSave}
+                kind={"secondary"}
+                loading={isSaving}
+                disabled={!hasChanges}
+            >
+                {allQuantitiesZero ? 'Cancel' : 'Update'}
+            </Button>
+        </>
+    );
+}
+
 function OrderPage({api}) {
     const {order, lines, billingAddress, shippingAddress, buyerIdentity, cost} = api;
     console.log('order', order);
@@ -63,13 +88,6 @@ function OrderPage({api}) {
         }));
     };
 
-    const handleRemoveItem = (lineItemId: string) => {
-        setQuantities(prev => ({
-            ...prev,
-            [lineItemId]: 0
-        }));
-    };
-
     const handleVariantSelect = (variant: VariantWithProduct, quantity: number) => {
         console.log('Variant selected:', {
             variantId: variant.variantId,
@@ -83,15 +101,11 @@ function OrderPage({api}) {
         setSelectedVariants(prev => [...prev, {variant, quantity}]);
     };
 
-    const handleVariantDelete = (variantId: string) => {
-        setSelectedVariants(prev => prev.filter(item => item.variant.variantId !== variantId));
-    };
-
     const handleNewVariantQuantityChange = (variantId: string, newQuantity: string) => {
         const quantity = Math.max(0, parseInt(newQuantity) || 0);
         setSelectedVariants(prev => prev.map(item =>
             item.variant.variantId === variantId
-                ? { ...item, quantity }
+                ? {...item, quantity}
                 : item
         ));
     };
@@ -179,14 +193,12 @@ function OrderPage({api}) {
                 {(allQuantitiesZero ? 'Cancel' : 'Update')}
             </Button>}
             primaryAction={
-                hasChanges && <Button
-                    onPress={handleSave}
-                    kind={"secondary"}
-                    loading={isSaving}
-                    disabled={!hasChanges}
-                >
-                    {(allQuantitiesZero ? 'Cancel' : 'Update')}
-                </Button>
+                <PrimaryActionButton
+                    hasChanges={hasChanges}
+                    allQuantitiesZero={allQuantitiesZero}
+                    isSaving={isSaving}
+                    handleSave={handleSave}
+                />
             }
         >
 
@@ -271,7 +283,7 @@ function OrderPage({api}) {
                                     <BlockStack spacing="base">
                                         {lineItems.map((item: any) => (
                                             <BlockStack key={item.id} spacing="tight">
-                                                <Grid columns={['fill', 'auto', 'auto']} spacing="base">
+                                                <Grid columns={['fill', 'auto', 'auto']} spacing="base" blockAlignment="center">
                                                     <GridItem>
                                                         <BlockStack spacing="extraTight">
                                                             {item.merchandise?.title && (
@@ -295,10 +307,15 @@ function OrderPage({api}) {
                                                     <GridItem>
                                                         <Button
                                                             kind="plain"
-                                                            onPress={() => handleRemoveItem(item.id)}
                                                             accessibilityLabel="Remove item"
+                                                            onPress={() => {
+                                                                setQuantities(prev => ({
+                                                                    ...prev,
+                                                                    [item.id]: 0
+                                                                }));
+                                                            }}
                                                         >
-                                                            <Icon source="delete" />
+                                                            <Icon source="delete"/>
                                                         </Button>
                                                     </GridItem>
                                                 </Grid>
@@ -308,7 +325,7 @@ function OrderPage({api}) {
                                         {/* New variants to add */}
                                         {selectedVariants.map((item, index) => (
                                             <BlockStack key={`new-${index}`} spacing="tight">
-                                                <Grid columns={['fill', 'auto', 'auto']} spacing="base">
+                                                <Grid columns={['fill', 'auto', 'auto']} spacing="base" blockAlignment="center">
                                                     <GridItem>
                                                         <BlockStack spacing="extraTight">
                                                             <InlineStack spacing={'base'} blockAlignment={'center'} inlineAlignment={'start'}>
@@ -336,10 +353,12 @@ function OrderPage({api}) {
                                                     <GridItem>
                                                         <Button
                                                             kind="plain"
-                                                            onPress={() => handleVariantDelete(item.variant.variantId)}
                                                             accessibilityLabel="Remove item"
+                                                            onPress={() => {
+                                                                setSelectedVariants(prev => prev.filter(v => v.variant.variantId !== item.variant.variantId));
+                                                            }}
                                                         >
-                                                            <Icon source="delete" />
+                                                            <Icon source="delete"/>
                                                         </Button>
                                                     </GridItem>
                                                 </Grid>
@@ -363,15 +382,16 @@ function OrderPage({api}) {
                                                     </Button>
                                                 }
                                             >
-                                                <ScrollView >
+                                                <ScrollView>
                                                     <ProductSearchModal
                                                         onVariantSelect={handleVariantSelect}
-                                                        onVariantDelete={handleVariantDelete}
+                                                        onVariantDelete={(variantId) => {
+                                                            setSelectedVariants(prev => prev.filter(v => v.variant.variantId !== variantId));
+                                                        }}
                                                         selectedVariants={selectedVariants}
                                                         onClose={() => setShowProductSearch(false)}
                                                     />
                                                 </ScrollView>
-
 
 
                                             </Modal>
