@@ -81,70 +81,11 @@ export function ProductSearchModal({ onVariantSelect, onVariantDelete, selectedV
 
     return (
         <BlockStack spacing="base">
-            {/* Selected Variants Section */}
-            {selectedVariants.length > 0 && (
-                <BlockStack spacing="tight">
-                    <TextBlock emphasis="bold">Selected Items</TextBlock>
-                    {selectedVariants.map(({ variant, quantity }) => (
-                        <BlockStack
-                            key={variant.variantId}
-                            border="base"
-                            padding="base"
-                            cornerRadius="base"
-                        >
-                            <InlineStack spacing="base" blockAlignment="center">
-                                {variant.image?.url ? (
-                                    <Image
-                                        source={variant.image.url}
-                                        alt={variant.image.altText || variant.productTitle}
-                                        aspectRatio={1}
-                                        fit="cover"
-                                        width={50}
-                                        borderRadius="base"
-                                    />
-                                ) : (
-                                    <BlockStack
-                                        minInlineSize={50}
-                                        minBlockSize={50}
-                                        border="base"
-                                        cornerRadius="base"
-                                        blockAlignment="center"
-                                        inlineAlignment="center"
-                                    >
-                                        <TextBlock size="small" appearance="subdued">No image</TextBlock>
-                                    </BlockStack>
-                                )}
-
-                                <BlockStack spacing="extraTight" flex={1}>
-                                    <TextBlock emphasis="bold">{variant.productTitle}</TextBlock>
-                                    {variant.variantTitle !== "Default Title" && (
-                                        <TextBlock size="small" appearance="subdued">
-                                            {variant.variantTitle}
-                                        </TextBlock>
-                                    )}
-                                    <TextBlock size="small" appearance="subdued">
-                                        Qty: {quantity} × {parseFloat(variant.price.amount).toFixed(2)} {variant.price.currencyCode}
-                                    </TextBlock>
-                                </BlockStack>
-
-                                <Button
-                                    onPress={() => onVariantDelete(variant.variantId)}
-                                    kind="secondary"
-                                >
-                                    Delete
-                                </Button>
-                            </InlineStack>
-                        </BlockStack>
-                    ))}
-                </BlockStack>
-            )}
-
             {/* Search Section */}
             <TextField
-                label="Search products"
+                label="Search products..f."
                 value={searchQuery}
                 onChange={handleSearchChange}
-                placeholder="Type to search..."
             />
 
             {searchError && (
@@ -183,30 +124,8 @@ export function ProductSearchModal({ onVariantSelect, onVariantDelete, selectedV
                                 cornerRadius="base"
                                 spacing="tight"
                             >
-                                <InlineStack spacing="base" blockAlignment="center">
-                                    {selectedVariant.image?.url ? (
-                                        <Image
-                                            source={selectedVariant.image.url}
-                                            alt={selectedVariant.image.altText || selectedVariant.productTitle}
-                                            aspectRatio={1}
-                                            fit="cover"
-                                            width={60}
-                                            borderRadius="base"
-                                        />
-                                    ) : (
-                                        <BlockStack
-                                            minInlineSize={60}
-                                            minBlockSize={60}
-                                            border="base"
-                                            cornerRadius="base"
-                                            blockAlignment="center"
-                                            inlineAlignment="center"
-                                        >
-                                            <TextBlock size="small" appearance="subdued">No image</TextBlock>
-                                        </BlockStack>
-                                    )}
-
-                                    <BlockStack spacing="extraTight" flex={1}>
+                                <InlineStack spacing="base" blockAlignment={'center'}>
+                                    <BlockStack spacing="extraTight">
                                         <TextBlock emphasis="bold">{firstVariant.productTitle}</TextBlock>
                                         <TextBlock size="small" appearance="subdued">
                                             {parseFloat(selectedVariant.price.amount).toFixed(2)}{" "}
@@ -214,22 +133,23 @@ export function ProductSearchModal({ onVariantSelect, onVariantDelete, selectedV
                                             {selectedVariant.sku && ` • SKU: ${selectedVariant.sku}`}
                                         </TextBlock>
                                     </BlockStack>
+                                    {/* Variant Selection - Only show if multiple variants */}
+                                    {hasMultipleVariants && (
+                                        <Select
+                                            label="Variant"
+                                            value={selectedVariantId}
+                                            onChange={(value) => handleVariantSelect(productId, value)}
+                                            options={productVariants.map(v => ({
+                                                value: v.variantId,
+                                                label: v.variantTitle === "Default Title"
+                                                    ? v.productTitle
+                                                    : v.variantTitle
+                                            }))}
+                                        />
+                                    )}
                                 </InlineStack>
 
-                                {/* Variant Selection - Only show if multiple variants */}
-                                {hasMultipleVariants && (
-                                    <Select
-                                        label="Variant"
-                                        value={selectedVariantId}
-                                        onChange={(value) => handleVariantSelect(productId, value)}
-                                        options={productVariants.map(v => ({
-                                            value: v.variantId,
-                                            label: v.variantTitle === "Default Title"
-                                                ? v.productTitle
-                                                : v.variantTitle
-                                        }))}
-                                    />
-                                )}
+
 
                                 {/* Quantity Controls */}
                                 <InlineStack spacing="base" blockAlignment="center">

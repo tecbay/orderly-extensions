@@ -377,23 +377,20 @@ function OrderPage({api}) {
                                                 title="Add Items"
                                                 padding={true}
                                                 primaryAction={
-                                                    <Button kind="primary">
+                                                    <Button kind={'plain'}>
                                                         Done ({selectedVariants.length})
                                                     </Button>
                                                 }
+
                                             >
-                                                <ScrollView>
-                                                    <ProductSearchModal
-                                                        onVariantSelect={handleVariantSelect}
-                                                        onVariantDelete={(variantId) => {
-                                                            setSelectedVariants(prev => prev.filter(v => v.variant.variantId !== variantId));
-                                                        }}
-                                                        selectedVariants={selectedVariants}
-                                                        onClose={() => setShowProductSearch(false)}
-                                                    />
-                                                </ScrollView>
-
-
+                                                <ProductSearchModal
+                                                    onVariantSelect={handleVariantSelect}
+                                                    onVariantDelete={(variantId) => {
+                                                        setSelectedVariants(prev => prev.filter(v => v.variant.variantId !== variantId));
+                                                    }}
+                                                    selectedVariants={selectedVariants}
+                                                    onClose={() => setShowProductSearch(false)}
+                                                />
                                             </Modal>
                                         }
                                     >
