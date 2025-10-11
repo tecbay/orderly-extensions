@@ -17,18 +17,31 @@ import {
     Badge,
     Icon, ScrollView
 } from "@shopify/ui-extensions-react/customer-account";
-import {useState} from "react";
+import {useState, useEffect} from "react";
 import {VariantWithProduct} from "../../../extensions/order-edit-button/src/types";
 import {ProductSearchModal} from "../../../extensions/order-edit-button/src/components/ProductSearchModal";
+
+const API_BASE_URL = 'https://orderly-be.test/api';
+
+interface Settings {
+    enable_order_editing: boolean;
+    edit_time_window: number;
+    safe_financial_statuses: string[];
+    safe_fulfillment_statuses: string[];
+    allowed_edit_types: string[];
+    who_can_edit: string[];
+    notify_on_edit: boolean;
+}
 
 export default reactExtension("customer-account.order.page.render",
     (api) => <OrderPage api={api}/>);
 
-function PrimaryActionButton({hasChanges, allQuantitiesZero, isSaving, handleSave}: {
+function PrimaryActionButton({hasChanges, allQuantitiesZero, isSaving, handleSave, disabled}: {
     hasChanges: boolean;
     allQuantitiesZero: boolean;
     isSaving: boolean;
     handleSave: () => void;
+    disabled?: boolean;
 }) {
     if (!hasChanges) return null;
 
@@ -41,7 +54,7 @@ function PrimaryActionButton({hasChanges, allQuantitiesZero, isSaving, handleSav
                 onPress={handleSave}
                 kind={"secondary"}
                 loading={isSaving}
-                disabled={!hasChanges}
+                disabled={!hasChanges || disabled}
             >
                 {allQuantitiesZero ? 'Cancel' : 'Update'}
             </Button>
@@ -50,7 +63,7 @@ function PrimaryActionButton({hasChanges, allQuantitiesZero, isSaving, handleSav
 }
 
 function OrderPage({api}) {
-    const {order, lines, billingAddress, shippingAddress, buyerIdentity, cost} = api;
+    const {order, lines, billingAddress, shippingAddress, buyerIdentity, cost, sessionToken} = api;
     console.log('order', order);
     console.log('lines', lines);
     console.log('billingAddress', billingAddress);
@@ -61,6 +74,9 @@ function OrderPage({api}) {
     const [selectedVariants, setSelectedVariants] = useState<Array<{ variant: VariantWithProduct; quantity: number }>>([]);
     const [quantities, setQuantities] = useState<Record<string, number>>({});
     const [isSaving, setIsSaving] = useState(false);
+    const [settings, setSettings] = useState<Settings | null>(null);
+    const [isLoadingSettings, setIsLoadingSettings] = useState(true);
+    const [validationErrors, setValidationErrors] = useState<string[]>([]);
 
     // Get current lines array from the lines object
     const lineItems = lines?.current || [];
@@ -75,6 +91,87 @@ function OrderPage({api}) {
             setQuantities(initialQuantities);
         }
     }
+
+    // Fetch settings
+    useEffect(() => {
+        async function fetchSettings() {
+            try {
+                const token = await sessionToken.get();
+
+                const response = await fetch(`${API_BASE_URL}/settings`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                    },
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    setSettings(data.settings);
+                } else {
+                    console.error('Failed to fetch settings:', response.statusText);
+                }
+            } catch (err) {
+                console.error('Error fetching settings:', err);
+            } finally {
+                setIsLoadingSettings(false);
+            }
+        }
+
+        fetchSettings();
+    }, [sessionToken]);
+
+    // Validate order against settings
+    useEffect(() => {
+        if (!settings || !order?.current) return;
+
+        const errors: string[] = [];
+
+        // Check if editing is enabled
+        if (!settings.enable_order_editing) {
+            errors.push('Order editing is currently disabled.');
+        }
+
+        // Check time window (edit_time_window is in minutes)
+        if (settings.edit_time_window && order.current.createdAt) {
+            const orderDate = new Date(order.current.createdAt);
+            const now = new Date();
+            const minutesPassed = (now.getTime() - orderDate.getTime()) / 1000 / 60;
+
+            if (minutesPassed > settings.edit_time_window) {
+                const hoursWindow = Math.floor(settings.edit_time_window / 60);
+                const minutesWindow = settings.edit_time_window % 60;
+                const windowText = hoursWindow > 0
+                    ? `${hoursWindow} hour${hoursWindow > 1 ? 's' : ''}${minutesWindow > 0 ? ` ${minutesWindow} minutes` : ''}`
+                    : `${minutesWindow} minutes`;
+                errors.push(`Orders can only be edited within ${windowText} of placement.`);
+            }
+        }
+
+        // Check financial status
+        if (settings.safe_financial_statuses.length > 0 && order.current.financialStatus) {
+            const financialStatus = order.current.financialStatus.toLowerCase();
+            const safeStatuses = settings.safe_financial_statuses.map(s => s.toLowerCase());
+
+            if (!safeStatuses.includes(financialStatus)) {
+                errors.push(`Orders with "${order.current.financialStatus}" financial status cannot be edited.`);
+            }
+        }
+
+        // Check fulfillment status
+        if (settings.safe_fulfillment_statuses.length > 0 && order.current.fulfillmentStatus) {
+            const fulfillmentStatus = order.current.fulfillmentStatus.toLowerCase();
+            const safeStatuses = settings.safe_fulfillment_statuses.map(s => s.toLowerCase());
+
+            if (!safeStatuses.includes(fulfillmentStatus)) {
+                errors.push(`Orders with "${order.current.fulfillmentStatus}" fulfillment status cannot be edited.`);
+            }
+        }
+
+        setValidationErrors(errors);
+    }, [settings, order]);
+
     const extractIdFromGid = (gid: string) => {
         const parts = gid.split('/');
         return parts[parts.length - 1];
@@ -128,13 +225,18 @@ function OrderPage({api}) {
         }
     };
 
-    if (!order) {
+    if (!order || isLoadingSettings) {
         return (
             <Page title="Loading...">
                 <TextBlock>Loading order...</TextBlock>
             </Page>
         );
     }
+
+    // Determine if editing is allowed
+    const canEdit = validationErrors.length === 0;
+    const canEditItems = settings?.allowed_edit_types?.includes('items') ?? false;
+    const canEditShipping = settings?.allowed_edit_types?.includes('shipping') ?? false;
 
     const hasChanges = lineItems.some((item: any) =>
         quantities[item.id] !== item.quantity
@@ -198,15 +300,26 @@ function OrderPage({api}) {
                     allQuantitiesZero={allQuantitiesZero}
                     isSaving={isSaving}
                     handleSave={handleSave}
+                    disabled={!canEdit}
                 />
             }
         >
 
 
             <BlockStack spacing={'base'}>
-                <Banner status={hasChanges ? 'warning' : 'info'}>
-                    {hasChanges ? 'You have unsaved changes.' : 'You can update you until 12:12 pm'}
-                </Banner>
+                {validationErrors.length > 0 ? (
+                    <BlockStack spacing={'tight'}>
+                        {validationErrors.map((error, index) => (
+                            <Banner key={index} status="critical">
+                                {error}
+                            </Banner>
+                        ))}
+                    </BlockStack>
+                ) : (
+                    <Banner status={hasChanges ? 'warning' : 'info'}>
+                        {hasChanges ? 'You have unsaved changes.' : `You can edit this order within ${settings?.edit_time_window ? Math.floor(settings.edit_time_window / 60) : 0} hours of placement.`}
+                    </Banner>
+                )}
 
                 {/* Two Column Layout */}
                 <Grid columns={['fill', 'fill']} spacing={'base'}>
@@ -302,12 +415,14 @@ function OrderPage({api}) {
                                                             type="number"
                                                             value={quantities[item.id]?.toString() || item.quantity?.toString() || '0'}
                                                             onChange={(value) => handleQuantityChange(item.id, value)}
+                                                            disabled={!canEdit || !canEditItems}
                                                         />
                                                     </GridItem>
                                                     <GridItem>
                                                         <Button
                                                             kind="plain"
                                                             accessibilityLabel="Remove item"
+                                                            disabled={!canEdit || !canEditItems}
                                                             onPress={() => {
                                                                 setQuantities(prev => ({
                                                                     ...prev,
@@ -348,12 +463,14 @@ function OrderPage({api}) {
                                                             type="number"
                                                             value={item.quantity.toString()}
                                                             onChange={(value) => handleNewVariantQuantityChange(item.variant.variantId, value)}
+                                                            disabled={!canEdit || !canEditItems}
                                                         />
                                                     </GridItem>
                                                     <GridItem>
                                                         <Button
                                                             kind="plain"
                                                             accessibilityLabel="Remove item"
+                                                            disabled={!canEdit || !canEditItems}
                                                             onPress={() => {
                                                                 setSelectedVariants(prev => prev.filter(v => v.variant.variantId !== item.variant.variantId));
                                                             }}
@@ -367,35 +484,37 @@ function OrderPage({api}) {
                                         ))}
                                     </BlockStack>
 
-                                    {/* Add Items Button */}
-                                    <Button
-                                        kind={'primary'}
-                                        appearance={'monochrome'}
-                                        overlay={
-                                            <Modal
-                                                id="add-product-modal"
-                                                title="Add Items"
-                                                padding={true}
-                                                primaryAction={
-                                                    <Button kind={'plain'}>
-                                                        Done ({selectedVariants.length})
-                                                    </Button>
-                                                }
+                                    {/* Add Items Button - only show if items editing is allowed */}
+                                    {canEdit && canEditItems && (
+                                        <Button
+                                            kind={'primary'}
+                                            appearance={'monochrome'}
+                                            overlay={
+                                                <Modal
+                                                    id="add-product-modal"
+                                                    title="Add Items"
+                                                    padding={true}
+                                                    primaryAction={
+                                                        <Button kind={'plain'}>
+                                                            Done ({selectedVariants.length})
+                                                        </Button>
+                                                    }
 
-                                            >
-                                                <ProductSearchModal
-                                                    onVariantSelect={handleVariantSelect}
-                                                    onVariantDelete={(variantId) => {
-                                                        setSelectedVariants(prev => prev.filter(v => v.variant.variantId !== variantId));
-                                                    }}
-                                                    selectedVariants={selectedVariants}
-                                                    onClose={() => setShowProductSearch(false)}
-                                                />
-                                            </Modal>
-                                        }
-                                    >
-                                        Add items
-                                    </Button>
+                                                >
+                                                    <ProductSearchModal
+                                                        onVariantSelect={handleVariantSelect}
+                                                        onVariantDelete={(variantId) => {
+                                                            setSelectedVariants(prev => prev.filter(v => v.variant.variantId !== variantId));
+                                                        }}
+                                                        selectedVariants={selectedVariants}
+                                                        onClose={() => setShowProductSearch(false)}
+                                                    />
+                                                </Modal>
+                                            }
+                                        >
+                                            Add items
+                                        </Button>
+                                    )}
                                 </BlockStack>
                             </Card>
 
