@@ -36,6 +36,129 @@ interface Settings {
 export default reactExtension("customer-account.order.page.render",
     (api) => <OrderPage api={api}/>);
 
+interface Address {
+    firstName?: string;
+    lastName?: string;
+    address1?: string;
+    address2?: string;
+    city?: string;
+    provinceCode?: string;
+    countryCode?: string;
+    zip?: string;
+    phone?: string;
+    company?: string;
+}
+
+function AddressEditModal({
+    title,
+    address,
+    onSave,
+    onClose,
+    isSaving
+}: {
+    title: string;
+    address: Address | null;
+    onSave: (addressData: any) => void;
+    onClose: () => void;
+    isSaving: boolean;
+}) {
+    const [formData, setFormData] = useState({
+        first_name: address?.firstName || '',
+        last_name: address?.lastName || '',
+        address1: address?.address1 || '',
+        address2: address?.address2 || '',
+        city: address?.city || '',
+        province: address?.provinceCode || '',
+        country: address?.countryCode || '',
+        zip: address?.zip || '',
+        phone: address?.phone || '',
+        company: address?.company || '',
+    });
+
+    const handleChange = (field: string, value: string) => {
+        setFormData(prev => ({...prev, [field]: value}));
+    };
+
+    const handleSubmit = () => {
+        onSave(formData);
+    };
+
+    return (
+        <BlockStack spacing="base">
+            <TextField
+                label="First Name"
+                value={formData.first_name}
+                onChange={(value) => handleChange('first_name', value)}
+            />
+            <TextField
+                label="Last Name"
+                value={formData.last_name}
+                onChange={(value) => handleChange('last_name', value)}
+            />
+            <TextField
+                label="Company"
+                value={formData.company}
+                onChange={(value) => handleChange('company', value)}
+            />
+            <TextField
+                label="Address Line 1"
+                value={formData.address1}
+                onChange={(value) => handleChange('address1', value)}
+            />
+            <TextField
+                label="Address Line 2"
+                value={formData.address2}
+                onChange={(value) => handleChange('address2', value)}
+            />
+            <Grid columns={['fill', 'fill']} spacing="base">
+                <GridItem>
+                    <TextField
+                        label="City"
+                        value={formData.city}
+                        onChange={(value) => handleChange('city', value)}
+                    />
+                </GridItem>
+                <GridItem>
+                    <TextField
+                        label="Province/State"
+                        value={formData.province}
+                        onChange={(value) => handleChange('province', value)}
+                    />
+                </GridItem>
+            </Grid>
+            <Grid columns={['fill', 'fill']} spacing="base">
+                <GridItem>
+                    <TextField
+                        label="Postal/ZIP Code"
+                        value={formData.zip}
+                        onChange={(value) => handleChange('zip', value)}
+                    />
+                </GridItem>
+                <GridItem>
+                    <TextField
+                        label="Country"
+                        value={formData.country}
+                        onChange={(value) => handleChange('country', value)}
+                    />
+                </GridItem>
+            </Grid>
+            <TextField
+                label="Phone"
+                value={formData.phone}
+                onChange={(value) => handleChange('phone', value)}
+            />
+            <InlineStack spacing="base">
+                <Button onPress={handleSubmit} loading={isSaving} kind="primary">
+                    Save
+                </Button>
+                <Button onPress={onClose} disabled={isSaving} kind="plain">
+                    Cancel
+                </Button>
+            </InlineStack>
+        </BlockStack>
+    );
+}
+
 function PrimaryActionButton({hasChanges, allQuantitiesZero, isSaving, handleSave, disabled}: {
     hasChanges: boolean;
     allQuantitiesZero: boolean;
@@ -77,6 +200,9 @@ function OrderPage({api}) {
     const [settings, setSettings] = useState<Settings | null>(null);
     const [isLoadingSettings, setIsLoadingSettings] = useState(true);
     const [validationErrors, setValidationErrors] = useState<string[]>([]);
+    const [showShippingModal, setShowShippingModal] = useState(false);
+    const [showBillingModal, setShowBillingModal] = useState(false);
+    const [isSavingAddress, setIsSavingAddress] = useState(false);
 
     // Get current lines array from the lines object
     const lineItems = lines?.current || [];
@@ -225,6 +351,45 @@ function OrderPage({api}) {
         }
     };
 
+    const handleUpdateAddress = async (addressData: any, type: 'shipping' | 'billing') => {
+        setIsSavingAddress(true);
+        try {
+            const token = await sessionToken.get();
+            const endpoint = type === 'shipping'
+                ? `${API_BASE_URL}/orders/shipping-address`
+                : `${API_BASE_URL}/orders/billing-address`;
+
+            const response = await fetch(endpoint, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    order_gid: order.current.id,
+                    ...addressData,
+                }),
+            });
+
+            if (response.ok) {
+                console.log(`${type} address updated successfully`);
+                // Close modal
+                if (type === 'shipping') {
+                    setShowShippingModal(false);
+                } else {
+                    setShowBillingModal(false);
+                }
+                // Optionally refresh the page or show success message
+            } else {
+                console.error(`Failed to update ${type} address:`, response.statusText);
+            }
+        } catch (err) {
+            console.error(`Error updating ${type} address:`, err);
+        } finally {
+            setIsSavingAddress(false);
+        }
+    };
+
     if (!order || isLoadingSettings) {
         return (
             <Page title="Loading...">
@@ -329,13 +494,41 @@ function OrderPage({api}) {
                             {/* Billing Address */}
                             <Card padding={'100'}>
                                 <BlockStack spacing="base">
-                                    <Heading level={3}>Billing Address</Heading>
+                                    <InlineStack spacing="base" blockAlignment="center" inlineAlignment="space-between">
+                                        <Heading level={3}>Billing Address</Heading>
+                                        {canEdit && canEditShipping && (
+                                            <Button
+                                                kind="plain"
+                                                accessibilityLabel="Edit billing address"
+                                                overlay={
+                                                    <Modal
+                                                        id="edit-billing-modal"
+                                                        title="Edit Billing Address"
+                                                        padding={true}
+                                                    >
+                                                        <AddressEditModal
+                                                            title="Edit Billing Address"
+                                                            address={billingAddress?.current || null}
+                                                            onSave={(data) => handleUpdateAddress(data, 'billing')}
+                                                            onClose={() => setShowBillingModal(false)}
+                                                            isSaving={isSavingAddress}
+                                                        />
+                                                    </Modal>
+                                                }
+                                            >
+                                                <Icon source="edit"/>
+                                            </Button>
+                                        )}
+                                    </InlineStack>
                                     <Divider/>
                                     {billingAddress?.current ? (
                                         <BlockStack spacing="extraTight">
                                             <TextBlock emphasis="bold">
                                                 {billingAddress.current.firstName} {billingAddress.current.lastName}
                                             </TextBlock>
+                                            {billingAddress.current.company && (
+                                                <TextBlock>{billingAddress.current.company}</TextBlock>
+                                            )}
                                             <TextBlock>{billingAddress.current.address1 || ''}</TextBlock>
                                             {billingAddress.current.address2 && (
                                                 <TextBlock>{billingAddress.current.address2}</TextBlock>
@@ -357,13 +550,41 @@ function OrderPage({api}) {
                             {/* Shipping Address */}
                             <Card padding={'100'}>
                                 <BlockStack spacing="base">
-                                    <Heading level={3}>Shipping Address</Heading>
+                                    <InlineStack spacing="base" blockAlignment="center" inlineAlignment="space-between">
+                                        <Heading level={3}>Shipping Address</Heading>
+                                        {canEdit && canEditShipping && (
+                                            <Button
+                                                kind="plain"
+                                                accessibilityLabel="Edit shipping address"
+                                                overlay={
+                                                    <Modal
+                                                        id="edit-shipping-modal"
+                                                        title="Edit Shipping Address"
+                                                        padding={true}
+                                                    >
+                                                        <AddressEditModal
+                                                            title="Edit Shipping Address"
+                                                            address={shippingAddress?.current || null}
+                                                            onSave={(data) => handleUpdateAddress(data, 'shipping')}
+                                                            onClose={() => setShowShippingModal(false)}
+                                                            isSaving={isSavingAddress}
+                                                        />
+                                                    </Modal>
+                                                }
+                                            >
+                                                <Icon source="edit"/>
+                                            </Button>
+                                        )}
+                                    </InlineStack>
                                     <Divider/>
                                     {shippingAddress?.current ? (
                                         <BlockStack spacing="extraTight">
                                             <TextBlock emphasis="bold">
                                                 {shippingAddress.current.firstName} {shippingAddress.current.lastName}
                                             </TextBlock>
+                                            {shippingAddress.current.company && (
+                                                <TextBlock>{shippingAddress.current.company}</TextBlock>
+                                            )}
                                             <TextBlock>{shippingAddress.current.address1 || ''}</TextBlock>
                                             {shippingAddress.current.address2 && (
                                                 <TextBlock>{shippingAddress.current.address2}</TextBlock>
