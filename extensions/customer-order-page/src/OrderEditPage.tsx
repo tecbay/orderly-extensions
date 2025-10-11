@@ -110,51 +110,39 @@ function AddressEditModal({
                 value={formData.address2}
                 onChange={(value) => handleChange('address2', value)}
             />
-            <Grid columns={['fill', 'fill']} spacing="base">
-                <GridItem>
-                    <TextField
-                        label="City"
-                        value={formData.city}
-                        onChange={(value) => handleChange('city', value)}
-                    />
-                </GridItem>
-                <GridItem>
-                    <TextField
-                        label="Province/State"
-                        value={formData.province}
-                        onChange={(value) => handleChange('province', value)}
-                    />
-                </GridItem>
-            </Grid>
-            <Grid columns={['fill', 'fill']} spacing="base">
-                <GridItem>
-                    <TextField
-                        label="Postal/ZIP Code"
-                        value={formData.zip}
-                        onChange={(value) => handleChange('zip', value)}
-                    />
-                </GridItem>
-                <GridItem>
-                    <TextField
-                        label="Country"
-                        value={formData.country}
-                        onChange={(value) => handleChange('country', value)}
-                    />
-                </GridItem>
-            </Grid>
+            <TextField
+                label="City"
+                value={formData.city}
+                onChange={(value) => handleChange('city', value)}
+            />
+            <TextField
+                label="Province/State"
+                value={formData.province}
+                onChange={(value) => handleChange('province', value)}
+            />
+            <TextField
+                label="Postal/ZIP Code"
+                value={formData.zip}
+                onChange={(value) => handleChange('zip', value)}
+            />
+            <TextField
+                label="Country"
+                value={formData.country}
+                onChange={(value) => handleChange('country', value)}
+            />
             <TextField
                 label="Phone"
                 value={formData.phone}
                 onChange={(value) => handleChange('phone', value)}
             />
-            <InlineStack spacing="base">
+            <BlockStack spacing="tight">
                 <Button onPress={handleSubmit} loading={isSaving} kind="primary">
                     Save
                 </Button>
                 <Button onPress={onClose} disabled={isSaving} kind="plain">
                     Cancel
                 </Button>
-            </InlineStack>
+            </BlockStack>
         </BlockStack>
     );
 }
@@ -454,11 +442,14 @@ function OrderPage({api}) {
         <Page
             subtitle="Edit order"
             title={`Order ${order.current.name}`}
-            secondaryAction={<Button
-                to={`shopify:customer-account/orders/${extractIdFromGid(order.current.id)}`}
-            >
-                {(allQuantitiesZero ? 'Cancel' : 'Update')}
-            </Button>}
+            secondaryAction={
+                <Button
+                    to={`shopify:customer-account/orders/${extractIdFromGid(order.current.id)}`}
+                    kind="plain"
+                >
+                    Back to Order
+                </Button>
+            }
             primaryAction={
                 <PrimaryActionButton
                     hasChanges={hasChanges}
@@ -486,11 +477,29 @@ function OrderPage({api}) {
                     </Banner>
                 )}
 
-                {/* Two Column Layout */}
-                <Grid columns={['fill', 'fill']} spacing={'base'}>
-                    {/* Left Column - Addresses */}
+                {/* Two Column Layout - Responsive: 1 col mobile, 2 cols desktop */}
+                <Grid
+                    columns={{
+                        default: ['fill'],
+                        conditionals: [{
+                            conditions: { viewportInlineSize: { min: 'medium' } },
+                            value: ['fill', 'fill']
+                        }]
+                    }}
+                    spacing='base'
+                    rows='auto'
+                >
+                    {/* Left Column - Addresses (wrapped in BlockStack for desktop) */}
                     <GridItem>
-                        <BlockStack spacing={'base'}>
+                        <BlockStack
+                            spacing={{
+                                default: 'none',
+                                conditionals: [{
+                                    conditions: { viewportInlineSize: { min: 'medium' } },
+                                    value: 'base'
+                                }]
+                            }}
+                        >
                             {/* Billing Address */}
                             <Card padding={'100'}>
                                 <BlockStack spacing="base">
@@ -605,9 +614,17 @@ function OrderPage({api}) {
                         </BlockStack>
                     </GridItem>
 
-                    {/* Right Column - Line Items */}
+                    {/* Right Column - Order Items & Summary */}
                     <GridItem>
-                        <BlockStack spacing={'base'}>
+                        <BlockStack
+                            spacing={{
+                                default: 'none',
+                                conditionals: [{
+                                    conditions: { viewportInlineSize: { min: 'medium' } },
+                                    value: 'base'
+                                }]
+                            }}
+                        >
                             <Card padding={'100'}>
                                 <BlockStack spacing="base">
                                     <Heading level={3}>Order Items</Heading>
@@ -617,7 +634,17 @@ function OrderPage({api}) {
                                     <BlockStack spacing="base">
                                         {lineItems.map((item: any) => (
                                             <BlockStack key={item.id} spacing="tight">
-                                                <Grid columns={['fill', 'auto', 'auto']} spacing="base" blockAlignment="center">
+                                                <Grid
+                                                    columns={{
+                                                        default: ['fill'],
+                                                        conditionals: [{
+                                                            conditions: { viewportInlineSize: { min: 'small' } },
+                                                            value: ['fill', 'auto', 'auto']
+                                                        }]
+                                                    }}
+                                                    spacing="base"
+                                                    blockAlignment="center"
+                                                >
                                                     <GridItem>
                                                         <BlockStack spacing="extraTight">
                                                             {item.merchandise?.title && (
@@ -655,13 +682,24 @@ function OrderPage({api}) {
                                                         </Button>
                                                     </GridItem>
                                                 </Grid>
+                                                <Divider/>
                                             </BlockStack>
                                         ))}
 
                                         {/* New variants to add */}
                                         {selectedVariants.map((item, index) => (
                                             <BlockStack key={`new-${index}`} spacing="tight">
-                                                <Grid columns={['fill', 'auto', 'auto']} spacing="base" blockAlignment="center">
+                                                <Grid
+                                                    columns={{
+                                                        default: ['fill'],
+                                                        conditionals: [{
+                                                            conditions: { viewportInlineSize: { min: 'small' } },
+                                                            value: ['fill', 'auto', 'auto']
+                                                        }]
+                                                    }}
+                                                    spacing="base"
+                                                    blockAlignment="center"
+                                                >
                                                     <GridItem>
                                                         <BlockStack spacing="extraTight">
                                                             <InlineStack spacing={'base'} blockAlignment={'center'} inlineAlignment={'start'}>
