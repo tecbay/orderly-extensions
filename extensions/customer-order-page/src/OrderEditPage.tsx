@@ -55,13 +55,14 @@ function PrimaryActionButton({
 }
 
 function OrderPage({ api }: { api: any }) {
-    const { order, lines, billingAddress, shippingAddress, cost, sessionToken } = api;
+    const { order, lines, billingAddress, shippingAddress, cost, sessionToken, ui } = api;
 
     // State management
     const [selectedVariants, setSelectedVariants] = useState<Array<{ variant: VariantWithProduct; quantity: number }>>([]);
     const [quantities, setQuantities] = useState<Record<string, number>>({});
     const [isSaving, setIsSaving] = useState(false);
     const [isSavingAddress, setIsSavingAddress] = useState(false);
+    const [optimisticShippingAddress, setOptimisticShippingAddress] = useState<any>(null);
 
     // Custom hooks
     const { settings, isLoadingSettings } = useSettings(sessionToken);
@@ -110,6 +111,23 @@ function OrderPage({ api }: { api: any }) {
 
     const handleUpdateAddress = async (addressData: any, type: 'shipping' | 'billing') => {
         setIsSavingAddress(true);
+
+        // Optimistically update the UI
+        if (type === 'shipping') {
+            setOptimisticShippingAddress({
+                firstName: addressData.first_name,
+                lastName: addressData.last_name,
+                address1: addressData.address1,
+                address2: addressData.address2,
+                city: addressData.city,
+                provinceCode: addressData.province,
+                countryCode: addressData.country,
+                zip: addressData.zip,
+                phone: addressData.phone,
+                company: addressData.company,
+            });
+        }
+
         try {
             const token = await sessionToken.get();
             const endpoint = type === 'shipping'
@@ -128,13 +146,16 @@ function OrderPage({ api }: { api: any }) {
                 }),
             });
 
-            if (response.ok) {
-                console.log(`${type} address updated successfully`);
-            } else {
-                console.error(`Failed to update ${type} address:`, response.statusText);
+            if (!response.ok) {
+                // Revert optimistic update on error
+                setOptimisticShippingAddress(null);
+                throw new Error(`Failed to update ${type} address`);
             }
         } catch (err) {
+            // Revert optimistic update on error
+            setOptimisticShippingAddress(null);
             console.error(`Error updating ${type} address:`, err);
+            throw err;
         } finally {
             setIsSavingAddress(false);
         }
@@ -271,7 +292,7 @@ function OrderPage({ api }: { api: any }) {
 
                             <AddressCard
                                 title="Shipping Address"
-                                address={shippingAddress?.current || null}
+                                address={optimisticShippingAddress || shippingAddress?.current || null}
                                 canEdit={canEdit && canEditShipping}
                                 onEdit={() => {}}
                                 editModal={
@@ -282,9 +303,14 @@ function OrderPage({ api }: { api: any }) {
                                     >
                                         <AddressEditModal
                                             title="Edit Shipping Address"
-                                            address={shippingAddress?.current || null}
+                                            address={optimisticShippingAddress || shippingAddress?.current || null}
                                             onSave={(data) => handleUpdateAddress(data, 'shipping')}
-                                            onClose={() => {}}
+                                            onClose={() => {
+                                                // Close the modal using Shopify's UI API
+                                                if (ui?.overlay?.close) {
+                                                    ui.overlay.close('edit-shipping-modal');
+                                                }
+                                            }}
                                             isSaving={isSavingAddress}
                                         />
                                     </Modal>
