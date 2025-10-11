@@ -3,13 +3,27 @@ import {
     reactExtension,
     useApi
 } from "@shopify/ui-extensions-react/customer-account";
-import {useEffect} from "react";
+import {useEffect, useState} from "react";
 
 const TARGET = 'customer-account.order.action.menu-item.render';
+const API_BASE_URL = 'https://orderly-be.test/api';
+
 export default reactExtension(TARGET, (api) => <OrderEditActionButton orderId={api.orderId}/>);
 
+interface Settings {
+    enable_order_editing: boolean;
+    edit_time_window: number;
+    safe_financial_statuses: string[];
+    safe_fulfillment_statuses: string[];
+    allowed_edit_types: string[];
+    who_can_edit: string[];
+    notify_on_edit: boolean;
+}
+
 function OrderEditActionButton({orderId}: { orderId: string }) {
-    const {sessionToken, query, navigation,extension} = useApi<"customer-account.order.action.menu-item.render">();
+    const {sessionToken} = useApi<"customer-account.order.action.menu-item.render">();
+    const [settings, setSettings] = useState<Settings | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
 
     // Extract numeric ID from GID
     const extractIdFromGid = (gid: string) => {
@@ -18,92 +32,42 @@ function OrderEditActionButton({orderId}: { orderId: string }) {
     };
 
     useEffect(() => {
-        // @ts-ignore
-        async function fetchProducts() {
+        async function fetchSettings() {
             try {
+                const token = await sessionToken.get();
 
-                const result = await query(
-                    `query getProducts($first: Int!) {
-            products(first: $first) {
-              edges {
-                node {
-                  id
-                  title
-                  description
-                  handle
-                  featuredImage {
-                    url
-                    altText
-                    width
-                    height
-                  }
-                  priceRange {
-                    minVariantPrice {
-                      amount
-                      currencyCode
-                    }
-                    maxVariantPrice {
-                      amount
-                      currencyCode
-                    }
-                  }
-                  variants(first: 10) {
-                    edges {
-                      node {
-                        id
-                        title
-                        sku
-                        availableForSale
-                        price {
-                          amount
-                          currencyCode
-                        }
-                        compareAtPrice {
-                          amount
-                          currencyCode
-                        }
-                        selectedOptions {
-                          name
-                          value
-                        }
-                      }
-                    }
-                  }
+                const response = await fetch(`${API_BASE_URL}/settings`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                    },
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    setSettings(data.settings);
+                } else {
+                    console.error('Failed to fetch settings:', response.statusText);
                 }
-              }
-              pageInfo {
-                hasNextPage
-                endCursor
-              }
-            }
-          }`,
-                    {
-                        variables: {
-                            first: 10
-                        }
-                    }
-                );
-
-                console.log(result.data, 'result.data')
             } catch (err) {
-                console.error('Error fetching products:', err);
+                console.error('Error fetching settings:', err);
             } finally {
+                setIsLoading(false);
             }
         }
 
-        fetchProducts();
-    }, [query]);
+        fetchSettings();
+    }, [sessionToken]);
 
+    // Don't render anything while loading or if order editing is disabled
+    if (isLoading || !settings?.enable_order_editing) {
+        return null;
+    }
 
-    sessionToken.get().then((sessionToken) => {
-        console.log(sessionToken)
-    })
-    useEffect(() => {
-        console.log('OrderEditActionButton orderId:', orderId);
-    }, [orderId]);
-
-    const {  } = useApi();
-
-    // return <Button>Edit</Button>;
-    return <Button to={`extension:order-full-page-edit/customer-account.order.page.render/${extractIdFromGid(orderId)}`}>Edit Order</Button>;
+    return (
+        <Button to={`extension:order-full-page-edit/customer-account.order.page.render/${extractIdFromGid(orderId)}`}>
+            Edit Order
+        </Button>
+    );
 }
