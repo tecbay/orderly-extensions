@@ -69,8 +69,8 @@ function OrderPage() {
 
     // Custom hooks
     const {settings, isLoadingSettings} = useSettings(sessionToken);
-    const {validationErrors, canEdit, canEditItems, canEditShipping} = useOrderValidation(settings, order);
     const {orderStatus, isLoading: isLoadingStatus} = useOrderStatus(order?.current?.id || '');
+    const {validationErrors, canEdit, canEditItems, canEditShipping} = useOrderValidation(settings, order, orderStatus);
 
     // Get current lines array from the lines object
     const lineItems = lines?.current || [];
