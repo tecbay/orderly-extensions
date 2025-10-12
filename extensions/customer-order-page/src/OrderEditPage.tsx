@@ -58,7 +58,7 @@ function PrimaryActionButton({
 
 function OrderPage() {
     const api = useApi<'customer-account.order.page.render'>();
-    const {order, lines, billingAddress, shippingAddress, cost, sessionToken, ui, query} = api;
+    const {order, lines, billingAddress, shippingAddress, cost, sessionToken, ui} = api;
 
     // State management
     const [selectedVariants, setSelectedVariants] = useState<Array<{ variant: VariantWithProduct; quantity: number }>>([]);
