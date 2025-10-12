@@ -4,12 +4,14 @@ import { ORDER_STATUS_QUERY } from "../utils/queries";
 interface OrderStatus {
     financialStatus: string | null;
     fulfillmentStatus: string | null;
+    createdAt: string | null;
 }
 
 export function useOrderStatus(orderId: string) {
     const [orderStatus, setOrderStatus] = useState<OrderStatus>({
         financialStatus: null,
-        fulfillmentStatus: null
+        fulfillmentStatus: null,
+        createdAt: null
     });
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -51,7 +53,8 @@ export function useOrderStatus(orderId: string) {
                 const order = response.data.order;
                 setOrderStatus({
                     financialStatus: order.financialStatus || null,
-                    fulfillmentStatus: order.fulfillmentStatus || null
+                    fulfillmentStatus: order.fulfillmentStatus || null,
+                    createdAt: order.createdAt || null
                 });
             } else {
                 setError('Order not found');

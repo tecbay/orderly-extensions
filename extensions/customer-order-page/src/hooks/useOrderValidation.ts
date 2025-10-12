@@ -4,6 +4,7 @@ import { Settings } from "./useSettings";
 interface OrderStatus {
     financialStatus: string | null;
     fulfillmentStatus: string | null;
+    createdAt: string | null;
 }
 
 // Helper function to get human-friendly payment status label
@@ -54,8 +55,8 @@ export function useOrderValidation(
         }
 
         // Check time window (edit_time_window is in minutes)
-        if (settings.edit_time_window && order.current.createdAt) {
-            const orderDate = new Date(order.current.createdAt);
+        if (settings.edit_time_window && orderStatus.createdAt) {
+            const orderDate = new Date(orderStatus.createdAt);
             const now = new Date();
             const minutesPassed = (now.getTime() - orderDate.getTime()) / 1000 / 60;
 
@@ -65,7 +66,7 @@ export function useOrderValidation(
                 const windowText = hoursWindow > 0
                     ? `${hoursWindow} hour${hoursWindow > 1 ? 's' : ''}${minutesWindow > 0 ? ` ${minutesWindow} minutes` : ''}`
                     : `${minutesWindow} minutes`;
-                errors.push(`This order can no longer be edited. Changes must be made within ${windowText} of placing the order.`);
+                errors.push(`This order can no longer be edited. \n Changes must be made within ${windowText} of placing the order.`);
             }
         }
 
