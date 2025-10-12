@@ -260,6 +260,7 @@ function OrderPage() {
                     validationErrors={validationErrors}
                     hasChanges={hasChanges}
                     editTimeWindow={settings?.edit_time_window}
+                    orderCreatedAt={orderStatus.createdAt}
                 />
 
                 {/* Two Column Layout - Responsive */}

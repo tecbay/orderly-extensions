@@ -61,11 +61,23 @@ export function useOrderValidation(
             const minutesPassed = (now.getTime() - orderDate.getTime()) / 1000 / 60;
 
             if (minutesPassed > settings.edit_time_window) {
-                const hoursWindow = Math.floor(settings.edit_time_window / 60);
-                const minutesWindow = settings.edit_time_window % 60;
-                const windowText = hoursWindow > 0
-                    ? `${hoursWindow} hour${hoursWindow > 1 ? 's' : ''}${minutesWindow > 0 ? ` ${minutesWindow} minutes` : ''}`
-                    : `${minutesWindow} minutes`;
+                const totalMinutes = settings.edit_time_window;
+                const days = Math.floor(totalMinutes / (24 * 60));
+                const hours = Math.floor((totalMinutes % (24 * 60)) / 60);
+                const minutes = totalMinutes % 60;
+
+                const parts: string[] = [];
+                if (days > 0) {
+                    parts.push(`${days} day${days > 1 ? 's' : ''}`);
+                }
+                if (hours > 0) {
+                    parts.push(`${hours} hour${hours > 1 ? 's' : ''}`);
+                }
+                if (minutes > 0) {
+                    parts.push(`${minutes} minute${minutes > 1 ? 's' : ''}`);
+                }
+
+                const windowText = parts.join(' ');
                 errors.push(`This order can no longer be edited. \n Changes must be made within ${windowText} of placing the order.`);
             }
         }
