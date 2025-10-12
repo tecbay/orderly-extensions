@@ -5,35 +5,37 @@ import {
     Button,
     Grid,
     GridItem,
-    Modal
+    Modal,
+    useApi
 } from "@shopify/ui-extensions-react/customer-account";
-import { useState } from "react";
-import { VariantWithProduct } from "../../../extensions/order-edit-button/src/types";
-import { ProductSearchModal } from "../../../extensions/order-edit-button/src/components/ProductSearchModal";
+import {useState} from "react";
+import {VariantWithProduct} from "../../../extensions/order-edit-button/src/types";
+import {ProductSearchModal} from "../../../extensions/order-edit-button/src/components/ProductSearchModal";
 
 // Components
-import { AddressCard } from "./components/AddressCard";
-import { AddressEditModal } from "./components/AddressEditModal";
-import { OrderItemsCard } from "./components/OrderItemsCard";
-import { OrderSummaryCard } from "./components/OrderSummaryCard";
-import { ValidationBanner } from "./components/ValidationBanner";
+import {AddressCard} from "./components/AddressCard";
+import {AddressEditModal} from "./components/AddressEditModal";
+import {OrderItemsCard} from "./components/OrderItemsCard";
+import {OrderSummaryCard} from "./components/OrderSummaryCard";
+import {ValidationBanner} from "./components/ValidationBanner";
 
 // Hooks
-import { useSettings } from "./hooks/useSettings";
-import { useOrderValidation } from "./hooks/useOrderValidation";
+import {useSettings} from "./hooks/useSettings";
+import {useOrderValidation} from "./hooks/useOrderValidation";
+import {useOrderStatus} from "./hooks/useOrderStatus";
 
 const API_BASE_URL = 'https://orderly-be.test/api';
 
 export default reactExtension("customer-account.order.page.render",
-    (api) => <OrderPage api={api}/>);
+    () => <OrderPage/>);
 
 function PrimaryActionButton({
-    hasChanges,
-    allQuantitiesZero,
-    isSaving,
-    handleSave,
-    disabled
-}: {
+                                 hasChanges,
+                                 allQuantitiesZero,
+                                 isSaving,
+                                 handleSave,
+                                 disabled
+                             }: {
     hasChanges: boolean;
     allQuantitiesZero: boolean;
     isSaving: boolean;
@@ -54,8 +56,9 @@ function PrimaryActionButton({
     );
 }
 
-function OrderPage({ api }: { api: any }) {
-    const { order, lines, billingAddress, shippingAddress, cost, sessionToken, ui } = api;
+function OrderPage() {
+    const api = useApi<'customer-account.order.page.render'>();
+    const {order, lines, billingAddress, shippingAddress, cost, sessionToken, ui, query} = api;
 
     // State management
     const [selectedVariants, setSelectedVariants] = useState<Array<{ variant: VariantWithProduct; quantity: number }>>([]);
@@ -65,8 +68,9 @@ function OrderPage({ api }: { api: any }) {
     const [optimisticShippingAddress, setOptimisticShippingAddress] = useState<any>(null);
 
     // Custom hooks
-    const { settings, isLoadingSettings } = useSettings(sessionToken);
-    const { validationErrors, canEdit, canEditItems, canEditShipping } = useOrderValidation(settings, order);
+    const {settings, isLoadingSettings} = useSettings(sessionToken);
+    const {validationErrors, canEdit, canEditItems, canEditShipping} = useOrderValidation(settings, order);
+    const {orderStatus, isLoading: isLoadingStatus} = useOrderStatus(order?.current?.id || '');
 
     // Get current lines array from the lines object
     const lineItems = lines?.current || [];
@@ -100,13 +104,13 @@ function OrderPage({ api }: { api: any }) {
         const quantity = Math.max(0, parseInt(newQuantity) || 0);
         setSelectedVariants(prev => prev.map(item =>
             item.variant.variantId === variantId
-                ? { ...item, quantity }
+                ? {...item, quantity}
                 : item
         ));
     };
 
     const handleVariantSelect = (variant: VariantWithProduct, quantity: number) => {
-        setSelectedVariants(prev => [...prev, { variant, quantity }]);
+        setSelectedVariants(prev => [...prev, {variant, quantity}]);
     };
 
     const handleUpdateAddress = async (addressData: any, type: 'shipping' | 'billing') => {
@@ -179,7 +183,7 @@ function OrderPage({ api }: { api: any }) {
     };
 
     // Loading state
-    if (!order || isLoadingSettings) {
+    if (!order || isLoadingSettings || isLoadingStatus) {
         return (
             <Page title="Loading...">
                 <BlockStack>Loading order...</BlockStack>
@@ -220,9 +224,9 @@ function OrderPage({ api }: { api: any }) {
         const newTotal = newSubtotal + newTax;
 
         return {
-            subtotal: { amount: newSubtotal.toFixed(2), currencyCode },
-            tax: { amount: newTax.toFixed(2), currencyCode },
-            total: { amount: newTotal.toFixed(2), currencyCode }
+            subtotal: {amount: newSubtotal.toFixed(2), currencyCode},
+            tax: {amount: newTax.toFixed(2), currencyCode},
+            total: {amount: newTotal.toFixed(2), currencyCode}
         };
     };
 
@@ -263,7 +267,7 @@ function OrderPage({ api }: { api: any }) {
                     columns={{
                         default: ['fill'],
                         conditionals: [{
-                            conditions: { viewportInlineSize: { min: 'medium' } },
+                            conditions: {viewportInlineSize: {min: 'medium'}},
                             value: ['fill', 'fill']
                         }]
                     }}
@@ -276,7 +280,7 @@ function OrderPage({ api }: { api: any }) {
                             spacing={{
                                 default: 'none',
                                 conditionals: [{
-                                    conditions: { viewportInlineSize: { min: 'medium' } },
+                                    conditions: {viewportInlineSize: {min: 'medium'}},
                                     value: 'base'
                                 }]
                             }}
@@ -286,7 +290,8 @@ function OrderPage({ api }: { api: any }) {
                                 title="Billing Address"
                                 address={billingAddress?.current || null}
                                 canEdit={false}
-                                onEdit={() => {}}
+                                onEdit={() => {
+                                }}
                                 editModal={<></>}
                             />
 
@@ -294,7 +299,8 @@ function OrderPage({ api }: { api: any }) {
                                 title="Shipping Address"
                                 address={optimisticShippingAddress || shippingAddress?.current || null}
                                 canEdit={canEdit && canEditShipping}
-                                onEdit={() => {}}
+                                onEdit={() => {
+                                }}
                                 editModal={
                                     <Modal
                                         id="edit-shipping-modal"
@@ -325,7 +331,7 @@ function OrderPage({ api }: { api: any }) {
                             spacing={{
                                 default: 'none',
                                 conditionals: [{
-                                    conditions: { viewportInlineSize: { min: 'medium' } },
+                                    conditions: {viewportInlineSize: {min: 'medium'}},
                                     value: 'base'
                                 }]
                             }}
@@ -337,7 +343,7 @@ function OrderPage({ api }: { api: any }) {
                                 canEdit={canEdit}
                                 canEditItems={canEditItems}
                                 onQuantityChange={handleQuantityChange}
-                                onRemoveLineItem={(id) => setQuantities(prev => ({ ...prev, [id]: 0 }))}
+                                onRemoveLineItem={(id) => setQuantities(prev => ({...prev, [id]: 0}))}
                                 onNewVariantQuantityChange={handleNewVariantQuantityChange}
                                 onRemoveVariant={(variantId) => {
                                     setSelectedVariants(prev => prev.filter(v => v.variant.variantId !== variantId));
@@ -359,7 +365,8 @@ function OrderPage({ api }: { api: any }) {
                                                 setSelectedVariants(prev => prev.filter(v => v.variant.variantId !== variantId));
                                             }}
                                             selectedVariants={selectedVariants}
-                                            onClose={() => {}}
+                                            onClose={() => {
+                                            }}
                                         />
                                     </Modal>
                                 }
@@ -369,6 +376,8 @@ function OrderPage({ api }: { api: any }) {
                                 subtotal={updatedTotals.subtotal}
                                 tax={updatedTotals.tax}
                                 total={updatedTotals.total}
+                                financialStatus={orderStatus.financialStatus}
+                                fulfillmentStatus={orderStatus.fulfillmentStatus}
                             />
                         </BlockStack>
                     </GridItem>
