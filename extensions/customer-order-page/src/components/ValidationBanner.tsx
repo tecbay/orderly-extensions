@@ -10,6 +10,7 @@ interface ValidationBannerProps {
     hasChanges: boolean;
     editTimeWindow?: number;
     orderCreatedAt?: string | null;
+    onTimeExpired?: () => void;
 }
 
 function formatTimeRemaining(totalSeconds: number): string {

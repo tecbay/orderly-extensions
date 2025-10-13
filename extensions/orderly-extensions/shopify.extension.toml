@@ -1,0 +1,21 @@
+[[extensions]]
+name = "t:collection_one_name"
+handle = "orderly-extensions"
+type = "editor_extension_collection"
+uid = "b5b42451-e0fc-b268-b4b7-599e0db3471eb111bf38"
+# Add the handles of the extensions you want in this collection here
+includes=[
+    "order-edit-button",
+    "order-full-page-edit"
+]
+
+# You can also add extensions to the collection this way
+#[[extensions.include]]
+#handle=""
+
+# A second editor extension collection added in the same extension toml config
+# [[extensions]]
+# name = "t:collection_two_name"
+# type = "editor_extension_collection"
+# handle = "orderly-extensions"
+# includes=[]

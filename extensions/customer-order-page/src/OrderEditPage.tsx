@@ -8,7 +8,7 @@ import {
     Modal,
     useApi
 } from "@shopify/ui-extensions-react/customer-account";
-import {useState} from "react";
+import {useState, useEffect} from "react";
 import {VariantWithProduct} from "../../../extensions/order-edit-button/src/types";
 import {ProductSearchModal} from "../../../extensions/order-edit-button/src/components/ProductSearchModal";
 
@@ -71,6 +71,48 @@ function OrderPage() {
     const {settings, isLoadingSettings} = useSettings(sessionToken);
     const {orderStatus, isLoading: isLoadingStatus} = useOrderStatus(order?.current?.id || '');
     const {validationErrors, canEdit, canEditItems, canEditShipping} = useOrderValidation(settings, order, orderStatus);
+
+    // Auto-complete onboarding step 1 on first load
+    useEffect(() => {
+        const completeOnboardingStep1 = async () => {
+            const STORAGE_KEY = 'orderly_onboarding_step_1_completed';
+            console.log(STORAGE_KEY)
+            // Check if we've already completed this
+            // const isCompleted = localStorage.getItem(STORAGE_KEY);
+            // if (isCompleted === 'true') {
+            //     return;
+            // }
+
+            try {
+                const token = await sessionToken.get();
+                const response = await fetch(`${API_BASE_URL}/onboarding/complete-step`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        step_number: 1,
+                    }),
+                });
+
+                if (response.ok) {
+                    // Mark as completed in localStorage
+                    // localStorage.setItem(STORAGE_KEY, 'true');
+                    // console.log('Onboarding step 1 completed successfully');
+                } else {
+                    console.error('Failed to complete onboarding step 1:', await response.text());
+                }
+            } catch (error) {
+                console.error('Error completing onboarding step 1:', error);
+            }
+        };
+
+        // Only run if we have a session token
+        if (sessionToken) {
+            completeOnboardingStep1();
+        }
+    }, [sessionToken]);
 
     // Get current lines array from the lines object
     const lineItems = lines?.current || [];
