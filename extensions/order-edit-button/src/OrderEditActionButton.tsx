@@ -31,6 +31,38 @@ function OrderEditActionButton({orderId}: { orderId: string }) {
         return parts[parts.length - 1];
     };
 
+    // Auto-complete onboarding step 2 on first load
+    useEffect(() => {
+        const completeOnboardingStep2 = async () => {
+            try {
+                const token = await sessionToken.get();
+                const response = await fetch(`${API_BASE_URL}/onboarding/complete-step`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        step_number: 2,
+                    }),
+                });
+
+                if (response.ok) {
+                    console.log('Onboarding step 2 completed successfully');
+                } else {
+                    console.error('Failed to complete onboarding step 2:', await response.text());
+                }
+            } catch (error) {
+                console.error('Error completing onboarding step 2:', error);
+            }
+        };
+
+        // Only run if we have a session token
+        if (sessionToken) {
+            completeOnboardingStep2();
+        }
+    }, [sessionToken]);
+
     useEffect(() => {
         async function fetchSettings() {
             try {
