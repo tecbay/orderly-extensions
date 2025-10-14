@@ -16,6 +16,7 @@ import {ProductSearchModal} from "../../../extensions/order-edit-button/src/comp
 import {AddressCard} from "./components/AddressCard";
 import {AddressEditModal} from "./components/AddressEditModal";
 import {OrderItemsCard} from "./components/OrderItemsCard";
+import {RemovedItemsCard} from "./components/RemovedItemsCard";
 import {OrderSummaryCard} from "./components/OrderSummaryCard";
 import {ValidationBanner} from "./components/ValidationBanner";
 
@@ -124,6 +125,12 @@ function OrderPage() {
     // Get current lines array from the orderData (from fetchOrderStatus API)
     const lineItems = orderData?.lineItems || [];
     console.log('lineItems from fetchOrderStatus:', lineItems);
+
+    // Filter items based on initial currentQuantity
+    // Active items: currentQuantity > 0 (shown in "Order Items" card)
+    // Removed items: currentQuantity === 0 (shown in "Removed Items" card)
+    const activeItems = lineItems.filter((item: any) => item.currentQuantity > 0);
+    const removedItems = lineItems.filter((item: any) => item.currentQuantity === 0);
     // Initialize quantities from orderData when line items are loaded
     // Use currentQuantity instead of quantity
     useEffect(() => {
@@ -565,7 +572,7 @@ function OrderPage() {
                             }}
                         >
                             <OrderItemsCard
-                                lineItems={lineItems}
+                                lineItems={activeItems}
                                 quantities={quantities}
                                 selectedVariants={selectedVariants}
                                 canEdit={canEdit}
@@ -608,6 +615,12 @@ function OrderPage() {
                                         />
                                     </Modal>
                                 }
+                            />
+
+                            {/* Removed Items Card - Shows items with initial quantity 0 */}
+                            <RemovedItemsCard
+                                lineItems={removedItems}
+                                quantities={quantities}
                             />
 
                             <OrderSummaryCard
