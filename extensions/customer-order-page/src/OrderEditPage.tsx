@@ -238,8 +238,30 @@ function OrderPage() {
     const handleSave = async () => {
         setIsSaving(true);
         try {
-            console.log('Saving order with quantities:', quantities);
-            console.log('New variants:', selectedVariants);
+            // Prepare payload for API
+            // For existing line items, include all quantity changes (including 0 for deleted items)
+            const lineItemChanges = quantities;
+
+            // For newly added items, only include items with quantity > 0
+            // Items with quantity 0 are omitted from the payload
+            const newVariantsToAdd = selectedVariants.filter(item => item.quantity > 0);
+
+            console.log('Saving order with quantities:', lineItemChanges);
+            console.log('New variants to add (excluding qty 0):', newVariantsToAdd);
+
+            // TODO: Replace with actual API call
+            // const response = await fetch(`${API_BASE_URL}/orders/update`, {
+            //     method: 'POST',
+            //     headers: {
+            //         'Authorization': `Bearer ${await sessionToken.get()}`,
+            //         'Content-Type': 'application/json',
+            //     },
+            //     body: JSON.stringify({
+            //         order_id: order.current.id,
+            //         line_items: lineItemChanges,
+            //         new_variants: newVariantsToAdd,
+            //     }),
+            // });
 
             // Simulate API call
             await new Promise(resolve => setTimeout(resolve, 1500));
@@ -417,7 +439,12 @@ function OrderPage() {
                                 onRemoveLineItem={(id) => setQuantities(prev => ({...prev, [id]: 0}))}
                                 onNewVariantQuantityChange={handleNewVariantQuantityChange}
                                 onRemoveVariant={(variantId) => {
-                                    setSelectedVariants(prev => prev.filter(v => v.variant.variantId !== variantId));
+                                    // Set quantity to 0 instead of removing
+                                    setSelectedVariants(prev => prev.map(item =>
+                                        item.variant.variantId === variantId
+                                            ? {...item, quantity: 0}
+                                            : item
+                                    ));
                                 }}
                                 onAddItemsClick={handleAddItemsClick}
                                 addItemsModal={

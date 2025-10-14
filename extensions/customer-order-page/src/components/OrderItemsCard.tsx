@@ -42,20 +42,20 @@ export function OrderItemsCard({
                 <Heading level={3}>Order Items</Heading>
                 <Divider/>
 
-                {/* Existing Line Items */}
+                {/* Existing Line Items - Keep all items visible, even with quantity 0 */}
                 <BlockStack spacing="base">
                     {lineItems.map((item: any) => (
                         <LineItemRow
                             key={item.id}
                             item={item}
-                            quantity={quantities[item.id] || item.quantity || 0}
+                            quantity={quantities[item.id] !== undefined ? quantities[item.id] : item.quantity}
                             onQuantityChange={(value) => onQuantityChange(item.id, value)}
                             onRemove={() => onRemoveLineItem(item.id)}
                             disabled={!canEdit || !canEditItems}
                         />
                     ))}
 
-                    {/* New variants to add */}
+                    {/* New variants to add - Keep all items visible, even with quantity 0 */}
                     {selectedVariants.map((item, index) => (
                         <LineItemRow
                             key={`new-${index}`}
