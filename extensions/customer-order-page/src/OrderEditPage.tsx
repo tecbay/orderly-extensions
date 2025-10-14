@@ -6,7 +6,9 @@ import {
     Grid,
     GridItem,
     Modal,
-    useApi
+    useApi,
+    SkeletonText,
+    Card
 } from "@shopify/ui-extensions-react/customer-account";
 import {useState, useEffect} from "react";
 import {VariantWithProduct} from "../../../extensions/order-edit-button/src/types";
@@ -74,7 +76,7 @@ function OrderPage() {
 
     // Custom hooks
     const {settings, isLoadingSettings} = useSettings(sessionToken);
-    const {orderStatus, orderData, isLoading: isLoadingStatus} = useOrderStatus(order?.current?.id || '', sessionToken);
+    const {orderStatus, orderData, isLoading: isLoadingStatus, refetch} = useOrderStatus(order?.current?.id || '', sessionToken);
     const {validationErrors, canEdit, canEditItems, canEditShipping} = useOrderValidation(settings, order, orderStatus);
 
     // Auto-complete onboarding step 1 on first load
@@ -393,6 +395,11 @@ function OrderPage() {
                 console.log('Order updated successfully (no JSON response)');
             }
 
+            // Refetch order data to get the latest state from the backend
+            // This ensures UI stays consistent with the backend after the update
+            console.log('Refetching order data for optimistic update...');
+            await refetch();
+
             // Reset UI state after successful update
             // This will hide the update button and validation banner
 
@@ -420,7 +427,80 @@ function OrderPage() {
     if (!order || isLoadingSettings || isLoadingStatus) {
         return (
             <Page title="Loading...">
-                <BlockStack>Loading order...</BlockStack>
+                <BlockStack spacing={'base'}>
+                    {/* Two Column Layout - Responsive */}
+                    <Grid
+                        columns={{
+                            default: ['fill'],
+                            conditionals: [{
+                                conditions: {viewportInlineSize: {min: 'medium'}},
+                                value: ['fill', 'fill']
+                            }]
+                        }}
+                        spacing='base'
+                        rows='auto'
+                    >
+                        {/* Left Column - Address Skeletons */}
+                        <GridItem>
+                            <BlockStack
+                                spacing={{
+                                    default: 'none',
+                                    conditionals: [{
+                                        conditions: {viewportInlineSize: {min: 'medium'}},
+                                        value: 'base'
+                                    }]
+                                }}
+                            >
+                                <Card padding={'100'}>
+                                    <BlockStack spacing="base">
+                                        <SkeletonText size="large"/>
+                                        <SkeletonText/>
+                                        <SkeletonText/>
+                                        <SkeletonText/>
+                                    </BlockStack>
+                                </Card>
+                                <Card padding={'100'}>
+                                    <BlockStack spacing="base">
+                                        <SkeletonText size="large"/>
+                                        <SkeletonText/>
+                                        <SkeletonText/>
+                                        <SkeletonText/>
+                                    </BlockStack>
+                                </Card>
+                            </BlockStack>
+                        </GridItem>
+
+                        {/* Right Column - Order Items Skeleton */}
+                        <GridItem>
+                            <BlockStack
+                                spacing={{
+                                    default: 'none',
+                                    conditionals: [{
+                                        conditions: {viewportInlineSize: {min: 'medium'}},
+                                        value: 'base'
+                                    }]
+                                }}
+                            >
+                                <Card padding={'100'}>
+                                    <BlockStack spacing="base">
+                                        <SkeletonText size="large"/>
+                                        <SkeletonText/>
+                                        <SkeletonText/>
+                                        <SkeletonText/>
+                                        <SkeletonText/>
+                                    </BlockStack>
+                                </Card>
+                                <Card padding={'100'}>
+                                    <BlockStack spacing="base">
+                                        <SkeletonText size="large"/>
+                                        <SkeletonText/>
+                                        <SkeletonText/>
+                                    </BlockStack>
+                                </Card>
+                            </BlockStack>
+                        </GridItem>
+                    </Grid>
+                </BlockStack>
             </Page>
         );
     }
