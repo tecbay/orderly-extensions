@@ -10,6 +10,7 @@ import {
     InlineStack,
     Badge
 } from "@shopify/ui-extensions-react/customer-account";
+import { useState, useEffect } from "react";
 
 interface LineItemRowProps {
     item: any;
@@ -28,11 +29,19 @@ export function LineItemRow({
     disabled,
     isNew = false
 }: LineItemRowProps) {
+    // Local state to control the input field strictly
+    const [localValue, setLocalValue] = useState(quantity.toString());
+
+    // Sync local value when parent quantity changes
+    useEffect(() => {
+        setLocalValue(quantity.toString());
+    }, [quantity]);
     const getItemTitle = () => {
         if (isNew) {
             return item.variant?.productTitle || item.productTitle;
         }
-        return item.merchandise?.title;
+        // fetchOrderStatus API returns title directly, not nested in merchandise
+        return item.title || item.merchandise?.title;
     };
 
     const getItemPrice = () => {
@@ -78,9 +87,15 @@ export function LineItemRow({
                                 {getItemTitle()}
                             </TextBlock>
                         )}
-                        {isNew && item.variant?.variantTitle && (
+                        {/* Show variant title for both new items and fetchOrderStatus items */}
+                        {(isNew && item.variant?.variantTitle) && (
                             <TextBlock appearance="subdued" size="small">
                                 {item.variant.variantTitle}
+                            </TextBlock>
+                        )}
+                        {(!isNew && item.variantTitle) && (
+                            <TextBlock appearance="subdued" size="small">
+                                {item.variantTitle}
                             </TextBlock>
                         )}
                         <TextBlock size="small" appearance="subdued">
@@ -92,9 +107,29 @@ export function LineItemRow({
                     <TextField
                         label="Qty"
                         type="number"
-                        value={quantity.toString()}
-                        onChange={onQuantityChange}
+                        value={localValue}
+                        onChange={(value) => {
+                            // Strip minus signs and any negative indicators
+                            const sanitized = value.replace(/-/g, '');
+
+                            if (sanitized === '' || sanitized === null || sanitized === undefined) {
+                                setLocalValue('0');
+                                onQuantityChange('0');
+                                return;
+                            }
+
+                            const num = parseInt(sanitized);
+                            if (isNaN(num) || num < 0) {
+                                setLocalValue('0');
+                                onQuantityChange('0');
+                                return;
+                            }
+
+                            setLocalValue(num.toString());
+                            onQuantityChange(num.toString());
+                        }}
                         disabled={disabled}
+                        min={0}
                     />
                 </GridItem>
                 <GridItem>

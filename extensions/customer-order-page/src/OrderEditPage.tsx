@@ -73,7 +73,7 @@ function OrderPage() {
 
     // Custom hooks
     const {settings, isLoadingSettings} = useSettings(sessionToken);
-    const {orderStatus, isLoading: isLoadingStatus} = useOrderStatus(order?.current?.id || '', sessionToken);
+    const {orderStatus, orderData, isLoading: isLoadingStatus} = useOrderStatus(order?.current?.id || '', sessionToken);
     const {validationErrors, canEdit, canEditItems, canEditShipping} = useOrderValidation(settings, order, orderStatus);
 
     // Auto-complete onboarding step 1 on first load
@@ -121,15 +121,16 @@ function OrderPage() {
         }
     }, [sessionToken]);
 
-    // Get current lines array from the lines object
-    const lineItems = lines?.current || [];
-    console.log('lines', lineItems);
-    // Initialize quantities from lines when line items are loaded
+    // Get current lines array from the orderData (from fetchOrderStatus API)
+    const lineItems = orderData?.lineItems || [];
+    console.log('lineItems from fetchOrderStatus:', lineItems);
+    // Initialize quantities from orderData when line items are loaded
+    // Use currentQuantity instead of quantity
     useEffect(() => {
         if (lineItems.length > 0 && Object.keys(quantities).length === 0) {
             const initialQuantities: Record<string, number> = {};
             lineItems.forEach((item: any) => {
-                initialQuantities[item.id] = item.quantity;
+                initialQuantities[item.id] = item.currentQuantity;
             });
             setQuantities(initialQuantities);
         }
@@ -142,15 +143,61 @@ function OrderPage() {
     };
 
     const handleQuantityChange = (lineItemId: string, newQuantity: string) => {
-        const quantity = parseInt(newQuantity) || 0;
+        // Handle empty string or invalid input
+        if (newQuantity === '' || newQuantity === null || newQuantity === undefined) {
+            setQuantities(prev => ({
+                ...prev,
+                [lineItemId]: 0
+            }));
+            return;
+        }
+
+        // Parse the value
+        const parsed = parseFloat(newQuantity);
+
+        // If negative, NaN, or contains minus sign, force to 0
+        if (isNaN(parsed) || parsed < 0 || newQuantity.includes('-')) {
+            setQuantities(prev => ({
+                ...prev,
+                [lineItemId]: 0
+            }));
+            return;
+        }
+
+        // Otherwise use the valid positive value (floor to integer)
+        const quantity = Math.floor(parsed);
         setQuantities(prev => ({
             ...prev,
-            [lineItemId]: Math.max(0, quantity)
+            [lineItemId]: quantity
         }));
     };
 
     const handleNewVariantQuantityChange = (variantId: string, newQuantity: string) => {
-        const quantity = Math.max(0, parseInt(newQuantity) || 0);
+        // Handle empty string or invalid input
+        if (newQuantity === '' || newQuantity === null || newQuantity === undefined) {
+            setSelectedVariants(prev => prev.map(item =>
+                item.variant.variantId === variantId
+                    ? {...item, quantity: 0}
+                    : item
+            ));
+            return;
+        }
+
+        // Parse the value
+        const parsed = parseFloat(newQuantity);
+
+        // If negative, NaN, or contains minus sign, force to 0
+        if (isNaN(parsed) || parsed < 0 || newQuantity.includes('-')) {
+            setSelectedVariants(prev => prev.map(item =>
+                item.variant.variantId === variantId
+                    ? {...item, quantity: 0}
+                    : item
+            ));
+            return;
+        }
+
+        // Otherwise use the valid positive value (floor to integer)
+        const quantity = Math.floor(parsed);
         setSelectedVariants(prev => prev.map(item =>
             item.variant.variantId === variantId
                 ? {...item, quantity}
@@ -251,35 +298,41 @@ function OrderPage() {
             // - add_line_items: array of {variant_gid, quantity} for new items
 
             // Map existing line items to update_line_items format
-            // Only include items where quantity has changed
+            // Include items where quantity has changed (including changes to 0)
             const updateLineItems = Object.entries(quantities)
                 .map(([lineItemId, newQuantity]) => {
                     // Find the original line item to get its variant GID and original quantity
                     const lineItem = lineItems.find((item: any) => item.id === lineItemId);
-                    if (!lineItem) return null;
-
-                    // Check if quantity has actually changed
-                    const originalQuantity = lineItem.quantity;
-                    if (newQuantity === originalQuantity) {
-                        return null; // Skip unchanged items
-                    }
-
-                    // Extract variant GID from the line item
-                    // Shopify line items have variant info in merchandise object
-                    const variantGid = lineItem.merchandise?.id || lineItem.variant?.id || lineItem.variantId || '';
-
-                    if (!variantGid) {
-                        console.warn('Could not find variant GID for line item:', lineItem);
+                    if (!lineItem) {
+                        console.log('Line item not found for ID:', lineItemId);
                         return null;
                     }
 
+                    // Check if quantity has actually changed - use currentQuantity from fetchOrderStatus API
+                    const originalQuantity = lineItem.currentQuantity;
+
+                    // Debug: Log comparison
+                    console.log(`Comparing item ${lineItemId}: new=${newQuantity} (${typeof newQuantity}), original=${originalQuantity} (${typeof originalQuantity})`);
+
+                    // IMPORTANT: Only skip items where quantity hasn't changed
+                    // Items that change to 0 (from any other value) MUST be included
+                    // Use == instead of === to handle type coercion (number vs string)
+                    if (Number(newQuantity) === Number(originalQuantity)) {
+                        console.log(`  -> Skipping unchanged item ${lineItemId}`);
+                        return null; // Skip only unchanged items
+                    }
+
+                    console.log(`  -> Including changed item ${lineItemId}`);
+
+                    // Send all changed items, including those with quantity 0
+                    // This allows the backend to properly handle quantity reductions and removals
+                    // Note: variant_gid is NOT needed for update_line_items, only for add_line_items
                     return {
                         id: lineItemId,
-                        variant_gid: variantGid,
-                        quantity: newQuantity // Send the new cumulative quantity (e.g., 6, not the diff)
+                        quantity: newQuantity // Send the new cumulative quantity (including 0)
                     };
                 })
-                .filter(item => item !== null); // Remove any null entries and unchanged items
+                .filter(item => item !== null); // Remove only null entries (invalid items)
 
             // Map newly selected variants to add_line_items format
             const addLineItems = selectedVariants
@@ -365,13 +418,13 @@ function OrderPage() {
         );
     }
 
-    // Calculate changes
+    // Calculate changes - use currentQuantity from fetchOrderStatus API
     const hasChanges = lineItems.some((item: any) =>
-        quantities[item.id] !== item.quantity
+        quantities[item.id] !== item.currentQuantity
     ) || selectedVariants.length > 0;
 
     const allQuantitiesZero = lineItems.every((item: any) => {
-        const qty = item.id in quantities ? quantities[item.id] : item.quantity;
+        const qty = item.id in quantities ? quantities[item.id] : item.currentQuantity;
         return qty === 0;
     }) && selectedVariants.length === 0;
 
@@ -382,7 +435,7 @@ function OrderPage() {
         let newSubtotal = 0;
         lineItems.forEach((item: any) => {
             const itemPrice = parseFloat(item.price?.amount || item.cost?.totalAmount?.amount || 0);
-            const itemQuantity = item.id in quantities ? quantities[item.id] : item.quantity;
+            const itemQuantity = item.id in quantities ? quantities[item.id] : item.currentQuantity;
             newSubtotal += itemPrice * itemQuantity;
         });
 

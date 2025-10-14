@@ -61,6 +61,7 @@ export function useOrderStatus(orderId: string, sessionToken: any) {
         fulfillmentStatus: null,
         createdAt: null
     });
+    const [orderData, setOrderData] = useState<OrderResponse['order'] | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -115,6 +116,7 @@ export function useOrderStatus(orderId: string, sessionToken: any) {
 
             if (response.success && response.order) {
                 const order = response.order;
+                setOrderData(order);
                 setOrderStatus({
                     financialStatus: null, // Backend doesn't provide this yet
                     fulfillmentStatus: calculateFulfillmentStatus(order.lineItems),
@@ -139,6 +141,7 @@ export function useOrderStatus(orderId: string, sessionToken: any) {
 
     return {
         orderStatus,
+        orderData,
         isLoading,
         error,
         refetch: fetchOrderStatus

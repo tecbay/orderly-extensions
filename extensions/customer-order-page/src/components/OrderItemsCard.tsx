@@ -42,13 +42,14 @@ export function OrderItemsCard({
                 <Heading level={3}>Order Items</Heading>
                 <Divider/>
 
-                {/* Existing Line Items - Keep all items visible, even with quantity 0 */}
                 <BlockStack spacing="base">
+                    {/* Existing Line Items - Keep all items visible, even with quantity 0 */}
+                    {/* Using data from fetchOrderStatus API - currentQuantity instead of quantity */}
                     {lineItems.map((item: any) => (
                         <LineItemRow
                             key={item.id}
                             item={item}
-                            quantity={quantities[item.id] !== undefined ? quantities[item.id] : item.quantity}
+                            quantity={quantities[item.id] !== undefined ? quantities[item.id] : item.currentQuantity}
                             onQuantityChange={(value) => onQuantityChange(item.id, value)}
                             onRemove={() => onRemoveLineItem(item.id)}
                             disabled={!canEdit || !canEditItems}
