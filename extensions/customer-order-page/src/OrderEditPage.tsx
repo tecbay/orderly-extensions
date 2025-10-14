@@ -73,7 +73,7 @@ function OrderPage() {
 
     // Custom hooks
     const {settings, isLoadingSettings} = useSettings(sessionToken);
-    const {orderStatus, isLoading: isLoadingStatus} = useOrderStatus(order?.current?.id || '');
+    const {orderStatus, isLoading: isLoadingStatus} = useOrderStatus(order?.current?.id || '', sessionToken);
     const {validationErrors, canEdit, canEditItems, canEditShipping} = useOrderValidation(settings, order, orderStatus);
 
     // Auto-complete onboarding step 1 on first load
