@@ -65,6 +65,7 @@ function OrderPage() {
 
     // State management
     const [selectedVariants, setSelectedVariants] = useState<Array<{ variant: VariantWithProduct; quantity: number }>>([]);
+    const [tempSelectedVariants, setTempSelectedVariants] = useState<Array<{ variant: VariantWithProduct; quantity: number }>>([]);
     const [quantities, setQuantities] = useState<Record<string, number>>({});
     const [isSaving, setIsSaving] = useState(false);
     const [isSavingAddress, setIsSavingAddress] = useState(false);
@@ -156,7 +157,30 @@ function OrderPage() {
     };
 
     const handleVariantSelect = (variant: VariantWithProduct, quantity: number) => {
-        setSelectedVariants(prev => [...prev, {variant, quantity}]);
+        setTempSelectedVariants(prev => [...prev, {variant, quantity}]);
+    };
+
+    const handleAddItemsClick = () => {
+        // Initialize temp state with current selections when opening modal
+        setTempSelectedVariants([...selectedVariants]);
+    };
+
+    const handleModalDone = () => {
+        // Apply temp selections to actual selections
+        setSelectedVariants([...tempSelectedVariants]);
+        // Close the modal
+        if (ui?.overlay?.close) {
+            ui.overlay.close('add-product-modal');
+        }
+    };
+
+    const handleModalCancel = () => {
+        // Discard temp selections and reset to current selections
+        setTempSelectedVariants([...selectedVariants]);
+        // Close the modal
+        if (ui?.overlay?.close) {
+            ui.overlay.close('add-product-modal');
+        }
     };
 
     const handleUpdateAddress = async (addressData: any, type: 'shipping' | 'billing') => {
@@ -395,25 +419,30 @@ function OrderPage() {
                                 onRemoveVariant={(variantId) => {
                                     setSelectedVariants(prev => prev.filter(v => v.variant.variantId !== variantId));
                                 }}
+                                onAddItemsClick={handleAddItemsClick}
                                 addItemsModal={
                                     <Modal
                                         id="add-product-modal"
                                         title="Add Items"
                                         padding={true}
                                         primaryAction={
-                                            <Button kind={'plain'}>
-                                                Done ({selectedVariants.length})
+                                            <Button kind={'primary'} onPress={handleModalDone}>
+                                                Done ({tempSelectedVariants.length})
+                                            </Button>
+                                        }
+                                        secondaryActions={
+                                            <Button kind={'secondary'} onPress={handleModalCancel}>
+                                                Cancel
                                             </Button>
                                         }
                                     >
                                         <ProductSearchModal
                                             onVariantSelect={handleVariantSelect}
                                             onVariantDelete={(variantId) => {
-                                                setSelectedVariants(prev => prev.filter(v => v.variant.variantId !== variantId));
+                                                setTempSelectedVariants(prev => prev.filter(v => v.variant.variantId !== variantId));
                                             }}
-                                            selectedVariants={selectedVariants}
-                                            onClose={() => {
-                                            }}
+                                            selectedVariants={tempSelectedVariants}
+                                            onClose={handleModalCancel}
                                         />
                                     </Modal>
                                 }

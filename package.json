@@ -8,7 +8,8 @@
     "dev": "shopify app dev",
     "info": "shopify app info",
     "generate": "shopify app generate",
-    "deploy": "API_BASE_URL=https://orderly.techlevin.com/api shopify app deploy"
+    "deploy": "API_BASE_URL=https://orderly.techlevin.com/api shopify app deploy",
+    "dev:local": "shopify app dev -c local"
   },
   "dependencies": {},
   "trustedDependencies": [

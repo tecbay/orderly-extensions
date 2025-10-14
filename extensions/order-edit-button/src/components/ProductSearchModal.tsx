@@ -4,11 +4,9 @@ import {
     InlineStack,
     TextBlock,
     TextField,
-    Image,
-    Button,
+    Checkbox,
     Spinner,
     Banner,
-    Select,
 } from "@shopify/ui-extensions-react/customer-account";
 import { useProductSearch } from "../hooks/useProductSearch";
 import { VariantWithProduct } from "../types";
@@ -22,9 +20,6 @@ interface ProductSearchModalProps {
 
 export function ProductSearchModal({ onVariantSelect, onVariantDelete, selectedVariants, onClose }: ProductSearchModalProps) {
     const [searchQuery, setSearchQuery] = useState("");
-    const [productVariants, setProductVariants] = useState<Record<string, VariantWithProduct[]>>({});
-    const [selectedVariantIds, setSelectedVariantIds] = useState<Record<string, string>>({});
-    const [quantities, setQuantities] = useState<Record<string, number>>({});
     const { variants, isSearching, searchError, debouncedSearch } = useProductSearch(true);
 
     const handleSearchChange = (value: string) => {
@@ -41,40 +36,55 @@ export function ProductSearchModal({ onVariantSelect, onVariantDelete, selectedV
         return acc;
     }, {} as Record<string, VariantWithProduct[]>);
 
-    const handleVariantSelect = (productId: string, variantId: string) => {
-        setSelectedVariantIds(prev => ({
-            ...prev,
-            [productId]: variantId
-        }));
+    // Track which variants are currently selected
+    const selectedVariantIds = new Set(selectedVariants.map(sv => sv.variant.variantId));
+
+    // Check if a variant is selected
+    const isVariantSelected = (variantId: string) => selectedVariantIds.has(variantId);
+
+    // Check if any variant of a product is selected (UI hack - keeps parent checked if any variant is selected)
+    const isProductSelected = (productId: string) => {
+        const productVariantsList = groupedProducts[productId];
+        if (!productVariantsList || productVariantsList.length === 0) return false;
+        return productVariantsList.some(v => isVariantSelected(v.variantId));
     };
 
-    const handleQuantityChange = (productId: string, delta: number) => {
-        setQuantities(prev => {
-            const currentQty = prev[productId] || 1;
-            const newQty = Math.max(1, currentQty + delta);
-            return {
-                ...prev,
-                [productId]: newQty
-            };
-        });
+    // Check if all variants of a product are selected
+    const isProductFullySelected = (productId: string) => {
+        const productVariantsList = groupedProducts[productId];
+        if (!productVariantsList || productVariantsList.length === 0) return false;
+        return productVariantsList.every(v => isVariantSelected(v.variantId));
     };
 
-    const handleAddVariant = (productId: string) => {
+    // Toggle a single variant
+    const handleVariantToggle = (variant: VariantWithProduct) => {
+        if (isVariantSelected(variant.variantId)) {
+            onVariantDelete(variant.variantId);
+        } else {
+            onVariantSelect(variant, 1);
+        }
+    };
+
+    // Toggle all variants of a product
+    const handleProductToggle = (productId: string) => {
         const productVariantsList = groupedProducts[productId];
         if (!productVariantsList || productVariantsList.length === 0) return;
 
-        const selectedVariantId = selectedVariantIds[productId] || productVariantsList[0].variantId;
-        const variant = productVariantsList.find(v => v.variantId === selectedVariantId);
+        const isAnySelected = isProductSelected(productId);
 
-        if (variant) {
-            const quantity = quantities[productId] || 1;
-            onVariantSelect(variant, quantity);
-
-            // Reset selection for this product
-            setQuantities(prev => {
-                const newQty = { ...prev };
-                delete newQty[productId];
-                return newQty;
+        if (isAnySelected) {
+            // Uncheck all variants
+            productVariantsList.forEach(variant => {
+                if (isVariantSelected(variant.variantId)) {
+                    onVariantDelete(variant.variantId);
+                }
+            });
+        } else {
+            // Check all variants
+            productVariantsList.forEach(variant => {
+                if (!isVariantSelected(variant.variantId)) {
+                    onVariantSelect(variant, 1);
+                }
             });
         }
     };
@@ -83,7 +93,7 @@ export function ProductSearchModal({ onVariantSelect, onVariantDelete, selectedV
         <BlockStack spacing="base">
             {/* Search Section */}
             <TextField
-                label="Search products..f."
+                label="Search products..."
                 value={searchQuery}
                 onChange={handleSearchChange}
             />
@@ -112,9 +122,7 @@ export function ProductSearchModal({ onVariantSelect, onVariantDelete, selectedV
                     {Object.entries(groupedProducts).map(([productId, productVariants]) => {
                         const firstVariant = productVariants[0];
                         const hasMultipleVariants = productVariants.length > 1;
-                        const selectedVariantId = selectedVariantIds[productId] || firstVariant.variantId;
-                        const selectedVariant = productVariants.find(v => v.variantId === selectedVariantId) || firstVariant;
-                        const quantity = quantities[productId] || 1;
+                        const isSelected = isProductSelected(productId);
 
                         return (
                             <BlockStack
@@ -124,59 +132,61 @@ export function ProductSearchModal({ onVariantSelect, onVariantDelete, selectedV
                                 cornerRadius="base"
                                 spacing="tight"
                             >
-                                <InlineStack spacing="base" blockAlignment={'center'}>
+                                {/* Product Row */}
+                                <InlineStack spacing="base" blockAlignment="center">
+                                    <Checkbox
+                                        checked={isSelected}
+                                        onChange={() => handleProductToggle(productId)}
+                                    />
                                     <BlockStack spacing="extraTight">
                                         <TextBlock emphasis="bold">{firstVariant.productTitle}</TextBlock>
                                         <TextBlock size="small" appearance="subdued">
-                                            {parseFloat(selectedVariant.price.amount).toFixed(2)}{" "}
-                                            {selectedVariant.price.currencyCode}
-                                            {selectedVariant.sku && ` • SKU: ${selectedVariant.sku}`}
+                                            {hasMultipleVariants ? `${productVariants.length} variants` : 'Single variant'}
+                                            {' • '}
+                                            {parseFloat(firstVariant.price.amount).toFixed(2)}{" "}
+                                            {firstVariant.price.currencyCode}
                                         </TextBlock>
                                     </BlockStack>
-                                    {/* Variant Selection - Only show if multiple variants */}
-                                    {hasMultipleVariants && (
-                                        <Select
-                                            label="Variant"
-                                            value={selectedVariantId}
-                                            onChange={(value) => handleVariantSelect(productId, value)}
-                                            options={productVariants.map(v => ({
-                                                value: v.variantId,
-                                                label: v.variantTitle === "Default Title"
-                                                    ? v.productTitle
-                                                    : v.variantTitle
-                                            }))}
-                                        />
-                                    )}
                                 </InlineStack>
 
+                                {/* Variants List - Always show for multiple variants */}
+                                {hasMultipleVariants && (
+                                    <BlockStack spacing="tight" inlineAlignment="start">
+                                        {productVariants.map((variant) => (
+                                            <InlineStack
+                                                key={variant.variantId}
+                                                spacing="base"
+                                                blockAlignment="center"
+                                                inlineAlignment="start"
+                                            >
+                                                <TextBlock>    </TextBlock>
+                                                <Checkbox
+                                                    checked={isVariantSelected(variant.variantId)}
+                                                    onChange={() => handleVariantToggle(variant)}
+                                                />
+                                                <BlockStack spacing="extraTight">
+                                                    <TextBlock>
+                                                        {variant.variantTitle === "Default Title"
+                                                            ? variant.productTitle
+                                                            : variant.variantTitle}
+                                                    </TextBlock>
+                                                    <TextBlock size="small" appearance="subdued">
+                                                        {parseFloat(variant.price.amount).toFixed(2)}{" "}
+                                                        {variant.price.currencyCode}
+                                                        {variant.sku && ` • SKU: ${variant.sku}`}
+                                                    </TextBlock>
+                                                </BlockStack>
+                                            </InlineStack>
+                                        ))}
+                                    </BlockStack>
+                                )}
 
-
-                                {/* Quantity Controls */}
-                                <InlineStack spacing="base" blockAlignment="center">
-                                    <InlineStack spacing="tight" blockAlignment="center">
-                                        <Button
-                                            onPress={() => handleQuantityChange(productId, -1)}
-                                            disabled={quantity === 1}
-                                            kind="secondary"
-                                        >
-                                            −
-                                        </Button>
-                                        <TextBlock emphasis="bold" size="medium">{quantity}</TextBlock>
-                                        <Button
-                                            onPress={() => handleQuantityChange(productId, 1)}
-                                            kind="secondary"
-                                        >
-                                            +
-                                        </Button>
-                                    </InlineStack>
-
-                                    <Button
-                                        onPress={() => handleAddVariant(productId)}
-                                        kind="primary"
-                                    >
-                                        Add
-                                    </Button>
-                                </InlineStack>
+                                {/* For single variant products, show variant details */}
+                                {!hasMultipleVariants && firstVariant.sku && (
+                                    <TextBlock size="small" appearance="subdued">
+                                        SKU: {firstVariant.sku}
+                                    </TextBlock>
+                                )}
                             </BlockStack>
                         );
                     })}

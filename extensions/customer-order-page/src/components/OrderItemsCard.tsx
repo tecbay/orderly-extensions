@@ -20,6 +20,7 @@ interface OrderItemsCardProps {
     onNewVariantQuantityChange: (variantId: string, value: string) => void;
     onRemoveVariant: (variantId: string) => void;
     addItemsModal: React.ReactNode;
+    onAddItemsClick?: () => void;
 }
 
 export function OrderItemsCard({
@@ -32,7 +33,8 @@ export function OrderItemsCard({
     onRemoveLineItem,
     onNewVariantQuantityChange,
     onRemoveVariant,
-    addItemsModal
+    addItemsModal,
+    onAddItemsClick
 }: OrderItemsCardProps) {
     return (
         <Card padding={'100'}>
@@ -73,6 +75,7 @@ export function OrderItemsCard({
                         kind={'primary'}
                         appearance={'monochrome'}
                         overlay={addItemsModal}
+                        onPress={onAddItemsClick}
                     >
                         Add items
                     </Button>
