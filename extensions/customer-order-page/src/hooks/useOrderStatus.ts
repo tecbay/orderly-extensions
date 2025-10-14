@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { ORDER_STATUS_QUERY } from "../utils/queries";
+import {ORDER_DETAILS_QUERY, ORDER_STATUS_QUERY} from "../utils/queries";
 
 interface OrderStatus {
     financialStatus: string | null;
@@ -17,7 +17,7 @@ export function useOrderStatus(orderId: string) {
     const [error, setError] = useState<string | null>(null);
 
     const orderQuery = {
-        query: ORDER_STATUS_QUERY,
+        query: ORDER_DETAILS_QUERY,
         variables: {
             orderId: orderId
         }

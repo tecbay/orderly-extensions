@@ -60,8 +60,8 @@ function PrimaryActionButton({
 }
 
 function OrderPage() {
-    const api = useApi<'customer-account.order.page.render'>();
-    const {order, lines, billingAddress, shippingAddress, cost, sessionToken, ui} = api;
+    const {order, lines, billingAddress, shippingAddress, cost, sessionToken, ui, storage} = useApi<'customer-account.order.page.render'>();
+
 
     // State management
     const [selectedVariants, setSelectedVariants] = useState<Array<{ variant: VariantWithProduct; quantity: number }>>([]);
@@ -79,14 +79,16 @@ function OrderPage() {
     // Auto-complete onboarding step 1 on first load
     useEffect(() => {
 
+        // @ts-ignore
         const completeOnboardingStep1 = async () => {
             const STORAGE_KEY = 'orderly_onboarding_step_1_completed';
             console.log(STORAGE_KEY)
             // Check if we've already completed this
-            // const isCompleted = localStorage.getItem(STORAGE_KEY);
-            // if (isCompleted === 'true') {
-            //     return;
-            // }
+            const isCompleted = await storage.read(STORAGE_KEY) ?? 'false';
+
+            if (isCompleted === 'true') {
+                return;
+            }
 
             try {
                 const token = await sessionToken.get();
@@ -103,7 +105,7 @@ function OrderPage() {
 
                 if (response.ok) {
                     // Mark as completed in localStorage
-                    // localStorage.setItem(STORAGE_KEY, 'true');
+                    await storage.write(STORAGE_KEY, 'true');
                     console.log('Onboarding step 1 completed successfully');
                 } else {
                     console.error('Failed to complete onboarding step 1:', await response.text());
@@ -121,17 +123,17 @@ function OrderPage() {
 
     // Get current lines array from the lines object
     const lineItems = lines?.current || [];
-
-    // Initialize quantities from lines (only once)
-    if (lineItems.length > 0 && Object.keys(quantities).length === 0) {
-        const initialQuantities: Record<string, number> = {};
-        lineItems.forEach((item: any) => {
-            initialQuantities[item.id] = item.quantity;
-        });
-        if (Object.keys(initialQuantities).length > 0) {
+    console.log('lines', lineItems);
+    // Initialize quantities from lines when line items are loaded
+    useEffect(() => {
+        if (lineItems.length > 0 && Object.keys(quantities).length === 0) {
+            const initialQuantities: Record<string, number> = {};
+            lineItems.forEach((item: any) => {
+                initialQuantities[item.id] = item.quantity;
+            });
             setQuantities(initialQuantities);
         }
-    }
+    }, [lineItems, quantities]);
 
     // Helper functions
     const extractIdFromGid = (gid: string) => {
@@ -238,37 +240,117 @@ function OrderPage() {
     const handleSave = async () => {
         setIsSaving(true);
         try {
+            // Debug: Log the structure of the first line item to understand the data
+            if (lineItems.length > 0) {
+                console.log('Sample line item structure:', JSON.stringify(lineItems[0], null, 2));
+            }
+
             // Prepare payload for API
-            // For existing line items, include all quantity changes (including 0 for deleted items)
-            const lineItemChanges = quantities;
+            // Backend expects:
+            // - update_line_items: array of {id, variant_gid, quantity} for existing items
+            // - add_line_items: array of {variant_gid, quantity} for new items
 
-            // For newly added items, only include items with quantity > 0
-            // Items with quantity 0 are omitted from the payload
-            const newVariantsToAdd = selectedVariants.filter(item => item.quantity > 0);
+            // Map existing line items to update_line_items format
+            // Only include items where quantity has changed
+            const updateLineItems = Object.entries(quantities)
+                .map(([lineItemId, newQuantity]) => {
+                    // Find the original line item to get its variant GID and original quantity
+                    const lineItem = lineItems.find((item: any) => item.id === lineItemId);
+                    if (!lineItem) return null;
 
-            console.log('Saving order with quantities:', lineItemChanges);
-            console.log('New variants to add (excluding qty 0):', newVariantsToAdd);
+                    // Check if quantity has actually changed
+                    const originalQuantity = lineItem.quantity;
+                    if (newQuantity === originalQuantity) {
+                        return null; // Skip unchanged items
+                    }
 
-            // TODO: Replace with actual API call
-            // const response = await fetch(`${API_BASE_URL}/orders/update`, {
-            //     method: 'POST',
-            //     headers: {
-            //         'Authorization': `Bearer ${await sessionToken.get()}`,
-            //         'Content-Type': 'application/json',
-            //     },
-            //     body: JSON.stringify({
-            //         order_id: order.current.id,
-            //         line_items: lineItemChanges,
-            //         new_variants: newVariantsToAdd,
-            //     }),
-            // });
+                    // Extract variant GID from the line item
+                    // Shopify line items have variant info in merchandise object
+                    const variantGid = lineItem.merchandise?.id || lineItem.variant?.id || lineItem.variantId || '';
 
-            // Simulate API call
-            await new Promise(resolve => setTimeout(resolve, 1500));
+                    if (!variantGid) {
+                        console.warn('Could not find variant GID for line item:', lineItem);
+                        return null;
+                    }
 
-            // Show success message or redirect
+                    return {
+                        id: lineItemId,
+                        variant_gid: variantGid,
+                        quantity: newQuantity // Send the new cumulative quantity (e.g., 6, not the diff)
+                    };
+                })
+                .filter(item => item !== null); // Remove any null entries and unchanged items
+
+            // Map newly selected variants to add_line_items format
+            const addLineItems = selectedVariants
+                .filter(item => item.quantity > 0)
+                .map(item => ({
+                    variant_gid: item.variant.variantId,
+                    quantity: item.quantity
+                }));
+
+            console.log('Updating line items:', JSON.stringify(updateLineItems, null, 2));
+            console.log('Adding line items:', JSON.stringify(addLineItems, null, 2));
+
+            // Build payload and only include non-empty arrays
+            const payload: any = {
+                order_gid: order.current.id,
+            };
+
+            if (updateLineItems.length > 0) {
+                payload.update_line_items = updateLineItems;
+            }
+
+            if (addLineItems.length > 0) {
+                payload.add_line_items = addLineItems;
+            }
+
+            console.log('Final payload:', JSON.stringify(payload, null, 2));
+
+            const token = await sessionToken.get();
+            const response = await fetch(`${API_BASE_URL}/orders`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                },
+                body: JSON.stringify(payload),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.text();
+                console.error('Failed to update order:', errorData);
+                throw new Error(`Failed to update order: ${response.statusText}`);
+            }
+
+            // Parse response if available
+            try {
+                const result = await response.json();
+                console.log('Order updated successfully:', result);
+            } catch (parseErr) {
+                // Response might be empty or not JSON
+                console.log('Order updated successfully (no JSON response)');
+            }
+
+            // Reset UI state after successful update
+            // This will hide the update button and validation banner
+
+            // Clear newly selected variants since they've been added
+            setSelectedVariants([]);
+            setTempSelectedVariants([]);
+
+            // Reset quantities state to empty so it re-initializes from fresh line items
+            // This will trigger the useEffect to reload quantities from the updated order
+            setQuantities({});
+
+            console.log('Order update complete - UI state reset');
+
+            // TODO: Show success message
+            // You can use Shopify's Banner component or show a toast
         } catch (err) {
             console.error('Error saving order:', err);
+            // TODO: Show error message to user
         } finally {
             setIsSaving(false);
         }
