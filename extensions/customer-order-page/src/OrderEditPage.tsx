@@ -24,7 +24,10 @@ import {useSettings} from "./hooks/useSettings";
 import {useOrderValidation} from "./hooks/useOrderValidation";
 import {useOrderStatus} from "./hooks/useOrderStatus";
 
-const API_BASE_URL = 'https://orderly-be.test/api';
+// Configuration
+import {config} from "../../shared/config";
+
+const API_BASE_URL = config.API_BASE_URL;
 
 export default reactExtension("customer-account.order.page.render",
     () => <OrderPage/>);
@@ -74,6 +77,7 @@ function OrderPage() {
 
     // Auto-complete onboarding step 1 on first load
     useEffect(() => {
+
         const completeOnboardingStep1 = async () => {
             const STORAGE_KEY = 'orderly_onboarding_step_1_completed';
             console.log(STORAGE_KEY)
@@ -99,7 +103,7 @@ function OrderPage() {
                 if (response.ok) {
                     // Mark as completed in localStorage
                     // localStorage.setItem(STORAGE_KEY, 'true');
-                    // console.log('Onboarding step 1 completed successfully');
+                    console.log('Onboarding step 1 completed successfully');
                 } else {
                     console.error('Failed to complete onboarding step 1:', await response.text());
                 }

@@ -4,9 +4,10 @@ import {
     useApi
 } from "@shopify/ui-extensions-react/customer-account";
 import {useEffect, useState} from "react";
+import {config} from "../../shared/config";
 
 const TARGET = 'customer-account.order.action.menu-item.render';
-const API_BASE_URL = 'https://orderly-be.test/api';
+const API_BASE_URL = config.API_BASE_URL;
 
 export default reactExtension(TARGET, (api) => <OrderEditActionButton orderId={api.orderId}/>);
 

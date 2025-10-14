@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
+import { config } from "../../../shared/config";
 
-const API_BASE_URL = 'https://orderly-be.test/api';
+const API_BASE_URL = config.API_BASE_URL;
 
 export interface Settings {
     enable_order_editing: boolean;
