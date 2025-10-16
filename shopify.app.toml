@@ -8,17 +8,38 @@ embedded = true
 [build]
 automatically_update_urls_on_dev = true
 
-[webhooks]
-api_version = "2025-07"
-
 [access_scopes]
 # Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
 scopes = "read_online_store_pages,read_themes,write_orders,customer_read_customers,customer_read_draft_orders,customer_read_markets,customer_read_orders,customer_write_customers,customer_write_orders,read_analytics,read_app_proxy,read_customer_events,read_customers,read_products,write_app_proxy,write_customers,write_products"
-optional_scopes = [ ]
+optional_scopes = []
 use_legacy_install_flow = false
 
 [auth]
-redirect_urls = [ ]
+redirect_urls = []
 
 [access.admin]
 embedded_app_direct_api_access = true
+
+[webhooks]
+api_version = "2025-10"
+
+[[webhooks.subscriptions]]
+compliance_topics = ["customers/data_request"]
+uri = "/webhook/customers-data-request"
+
+[[webhooks.subscriptions]]
+compliance_topics = ["customers/redact"]
+uri = "/webhook/customers-redact"
+
+[[webhooks.subscriptions]]
+compliance_topics = ["shop/redact"]
+uri = "/webhook/shop-redact"
+
+[[webhooks.subscriptions]]
+topics = ["app/uninstalled"]
+uri = "/webhook/app-uninstalled"
+
+[[webhooks.subscriptions]]
+topics = ["shop/update"]
+uri = "/webhook/shop-update"
+
