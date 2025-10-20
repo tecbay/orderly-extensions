@@ -33,7 +33,7 @@ import {config} from "../../shared/config";
 const API_BASE_URL = config.API_BASE_URL;
 
 export default reactExtension("customer-account.order.page.render",
-    () => <OrderPage/>);
+    () => <OrderEditPage/>);
 
 function PrimaryActionButton({
                                  hasChanges,
@@ -62,9 +62,9 @@ function PrimaryActionButton({
     );
 }
 
-function OrderPage() {
+function OrderEditPage() {
     const {order, lines, billingAddress, shippingAddress, cost, sessionToken, ui, storage} = useApi<'customer-account.order.page.render'>();
-
+    console.log('OrderEditPage--->>>>')
 
     // State management
     const [selectedVariants, setSelectedVariants] = useState<Array<{ variant: VariantWithProduct; quantity: number }>>([]);

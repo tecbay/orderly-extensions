@@ -22,6 +22,7 @@ interface Settings {
 }
 
 function OrderEditActionButton({orderId}: { orderId: string }) {
+    console.log("OrderEditActionButton------>>>>>>>", orderId);
     const {sessionToken} = useApi<"customer-account.order.action.menu-item.render">();
     const [settings, setSettings] = useState<Settings | null>(null);
     const [isLoading, setIsLoading] = useState(true);
