@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { config } from "../../../shared/config";
+import {useState, useEffect} from "react";
+import {config} from "../../../shared/config";
 
 const API_BASE_URL = config.API_BASE_URL;
 
@@ -44,6 +44,7 @@ export interface OrderResponse {
         edited: boolean;
         confirmed: boolean;
         createdAt: string;
+        cancelledAt: string | null;
         currencyCode: string;
         refundable: boolean;
         totalPrice: string;
@@ -93,7 +94,7 @@ export function useOrderStatus(orderId: string, sessionToken: any) {
 
             const token = await sessionToken.get();
             const result = await fetch(
-                `${API_BASE_URL}/orders?order_gid=${encodeURIComponent(orderId)}`,
+                `${API_BASE_URL}/orders?order_gid=${orderId}`,
                 {
                     method: "GET",
                     headers: {
@@ -111,8 +112,6 @@ export function useOrderStatus(orderId: string, sessionToken: any) {
             }
 
             const response: OrderResponse = await result.json();
-
-            console.log('Order status response:', JSON.stringify(response, null, 2));
 
             if (response.success && response.order) {
                 const order = response.order;

@@ -8,7 +8,7 @@ import {
     Modal,
     useApi,
     SkeletonText,
-    Card
+    Card, Text
 } from "@shopify/ui-extensions-react/customer-account";
 import {useState, useEffect} from "react";
 import {VariantWithProduct} from "../../../extensions/order-edit-button/src/types";
@@ -29,11 +29,11 @@ import {useOrderStatus} from "./hooks/useOrderStatus";
 
 // Configuration
 import {config} from "../../shared/config";
+import PageLoader from "./components/PageLoader";
 
 const API_BASE_URL = config.API_BASE_URL;
 
-export default reactExtension("customer-account.order.page.render",
-    () => <OrderEditPage/>);
+export default reactExtension("customer-account.order.page.render", async () => <OrderEditPage/>);
 
 function PrimaryActionButton({
                                  hasChanges,
@@ -64,7 +64,6 @@ function PrimaryActionButton({
 
 function OrderEditPage() {
     const {order, lines, billingAddress, shippingAddress, cost, sessionToken, ui, storage} = useApi<'customer-account.order.page.render'>();
-    console.log('OrderEditPage--->>>>')
 
     // State management
     const [selectedVariants, setSelectedVariants] = useState<Array<{ variant: VariantWithProduct; quantity: number }>>([]);
@@ -107,7 +106,7 @@ function OrderEditPage() {
                 });
 
                 if (response.ok) {
-                    // Mark as completed in localStorage
+                    // Mark as completed in localStorageadd
                     await storage.write(STORAGE_KEY, 'true');
                     console.log('Onboarding step 1 completed successfully');
                 } else {
@@ -425,84 +424,7 @@ function OrderEditPage() {
 
     // Loading state
     if (!order || isLoadingSettings || isLoadingStatus) {
-        return (
-            <Page title="Loading...">
-                <BlockStack spacing={'base'}>
-                    {/* Two Column Layout - Responsive */}
-                    <Grid
-                        columns={{
-                            default: ['fill'],
-                            conditionals: [{
-                                conditions: {viewportInlineSize: {min: 'medium'}},
-                                value: ['fill', 'fill']
-                            }]
-                        }}
-                        spacing='base'
-                        rows='auto'
-                    >
-                        {/* Left Column - Address Skeletons */}
-                        <GridItem>
-                            <BlockStack
-                                spacing={{
-                                    default: 'none',
-                                    conditionals: [{
-                                        conditions: {viewportInlineSize: {min: 'medium'}},
-                                        value: 'base'
-                                    }]
-                                }}
-                            >
-                                <Card padding={'100'}>
-                                    <BlockStack spacing="base">
-                                        <SkeletonText size="large"/>
-                                        <SkeletonText/>
-                                        <SkeletonText/>
-                                        <SkeletonText/>
-                                    </BlockStack>
-                                </Card>
-                                <Card padding={'100'}>
-                                    <BlockStack spacing="base">
-                                        <SkeletonText size="large"/>
-                                        <SkeletonText/>
-                                        <SkeletonText/>
-                                        <SkeletonText/>
-                                    </BlockStack>
-                                </Card>
-                            </BlockStack>
-                        </GridItem>
-
-                        {/* Right Column - Order Items Skeleton */}
-                        <GridItem>
-                            <BlockStack
-                                spacing={{
-                                    default: 'none',
-                                    conditionals: [{
-                                        conditions: {viewportInlineSize: {min: 'medium'}},
-                                        value: 'base'
-                                    }]
-                                }}
-                            >
-                                <Card padding={'100'}>
-                                    <BlockStack spacing="base">
-                                        <SkeletonText size="large"/>
-                                        <SkeletonText/>
-                                        <SkeletonText/>
-                                        <SkeletonText/>
-                                        <SkeletonText/>
-                                    </BlockStack>
-                                </Card>
-                                <Card padding={'100'}>
-                                    <BlockStack spacing="base">
-                                        <SkeletonText size="large"/>
-                                        <SkeletonText/>
-                                        <SkeletonText/>
-                                    </BlockStack>
-                                </Card>
-                            </BlockStack>
-                        </GridItem>
-                    </Grid>
-                </BlockStack>
-            </Page>
-        );
+        return <PageLoader/>;
     }
 
     // Calculate changes - use currentQuantity from fetchOrderStatus API
@@ -545,18 +467,13 @@ function OrderEditPage() {
     };
 
     const updatedTotals = calculateUpdatedTotals();
-
+    console.log('Updating totals:settingssettingsd', settings);
     return (
         <Page
             subtitle="Edit order"
             title={`Order ${order.current.name}`}
             secondaryAction={
-                <Button
-                    to={`shopify:customer-account/orders/${extractIdFromGid(order.current.id)}`}
-                    kind="plain"
-                >
-                    Back to Order
-                </Button>
+                <Button to={`shopify:customer-account/orders/${extractIdFromGid(order.current.id)}`}>Back to Order</Button>
             }
             primaryAction={
                 <PrimaryActionButton
@@ -575,6 +492,7 @@ function OrderEditPage() {
                     hasChanges={hasChanges}
                     editTimeWindow={settings?.edit_time_window}
                     orderCreatedAt={orderStatus.createdAt}
+                    orderCancelledAt={orderData.cancelledAt}
                 />
 
                 {/* Two Column Layout - Responsive */}
@@ -613,7 +531,7 @@ function OrderEditPage() {
                             <AddressCard
                                 title="Shipping Address"
                                 address={optimisticShippingAddress || shippingAddress?.current || null}
-                                canEdit={canEdit && canEditShipping}
+                                canEdit={canEdit && canEditShipping && orderData.cancelledAt == null}
                                 onEdit={() => {
                                 }}
                                 editModal={
@@ -651,7 +569,7 @@ function OrderEditPage() {
                                 }]
                             }}
                         >
-                            <OrderItemsCard
+                            {orderData.cancelledAt == null && <OrderItemsCard
                                 lineItems={activeItems}
                                 quantities={quantities}
                                 selectedVariants={selectedVariants}
@@ -695,7 +613,7 @@ function OrderEditPage() {
                                         />
                                     </Modal>
                                 }
-                            />
+                            />}
 
                             {/* Removed Items Card - Shows items with initial quantity 0 */}
                             <RemovedItemsCard

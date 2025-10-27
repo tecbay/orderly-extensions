@@ -3,13 +3,14 @@ import {
     Banner,
     Text
 } from "@shopify/ui-extensions-react/customer-account";
-import { useState, useEffect } from "react";
+import {useState, useEffect} from "react";
 
 interface ValidationBannerProps {
     validationErrors: string[];
     hasChanges: boolean;
     editTimeWindow?: number;
     orderCreatedAt?: string | null;
+    orderCancelledAt?: string | null;
     onTimeExpired?: () => void;
 }
 
@@ -39,7 +40,7 @@ function formatTimeRemaining(totalSeconds: number): string {
     return parts.join(' ');
 }
 
-export function ValidationBanner({ validationErrors, hasChanges, editTimeWindow, orderCreatedAt }: ValidationBannerProps) {
+export function ValidationBanner({validationErrors, hasChanges, editTimeWindow, orderCreatedAt, orderCancelledAt}: ValidationBannerProps) {
     const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
 
     useEffect(() => {
@@ -65,6 +66,16 @@ export function ValidationBanner({ validationErrors, hasChanges, editTimeWindow,
 
         return () => clearInterval(interval);
     }, [editTimeWindow, orderCreatedAt]);
+
+
+    if (orderCancelledAt) {
+        return (
+            <Banner status={'critical'}>
+                Order cancelled has been canceled.
+            </Banner>
+        );
+    }
+
 
     if (validationErrors.length > 0) {
         return (

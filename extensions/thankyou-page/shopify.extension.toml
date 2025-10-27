@@ -1,0 +1,11 @@
+name = "thankyou-page"
+type = "checkout_post_purchase"
+uid = "65ef4826-681d-f0c1-99e3-67c1dc542c3f7eb52209"
+
+# [[metafields]]
+# namespace = "my-namespace"
+# key = "my-key"
+
+# [[metafields]]
+# namespace = "my-namespace"
+# key = "my-key-2"
